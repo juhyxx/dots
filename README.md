@@ -1,4 +1,4 @@
-dots (for musical idiots)
+Dots (for musical idiots) [![Build Status](https://travis-ci.org/juhyxx/dots.svg?branch=master)](https://travis-ci.org/juhyxx/dots)
 ====
 Do you really need to read the tiny, ugly nasty black dots?
 
