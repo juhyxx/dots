@@ -8,7 +8,6 @@ before_install:
 - npm install -g bower
 - npm install -g brunch
 install:
-- bower install
 - npm install
 script:
 - brunch build --production
