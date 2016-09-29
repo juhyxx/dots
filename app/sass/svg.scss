@@ -1,0 +1,77 @@
+@import "https://fonts.googleapis.com/css?family=Herr+Von+Muellerhoff";
+$colorBg: #faebd7;
+$colorNavBg: darken($colorBg, 60%);
+
+#staff {
+	line {
+		stroke: black;
+	}
+}
+svg {
+	#note {
+		animation: dot 10s ease-in infinite;
+	}
+}
+nav {
+	color: white;
+	background-color: $colorNavBg;
+	padding: 0.5rem;
+	background-image: linear-gradient(darken($colorNavBg, 5%) 1px, transparent 1px);
+	background-size: 100% 5px;
+	box-shadow: inset 0 0 60px rgba(black, 0.2);
+}
+html {
+	font-size: 300%;
+	* {
+		font-family: "Herr Von Muellerhoff", cursive;
+	}
+}
+body {
+	background: $colorBg;
+	background-image: linear-gradient(darken($colorBg, 5%) 1px, transparent 1px);
+	background-size: 100% 5px;
+	padding: 0;
+	margin: 0;
+}
+
+label {
+	display: block;
+	font-size: 1rem;
+}
+input,
+button,
+label {
+	cursor: pointer;
+	outline: none;
+}
+button {
+	font-size: 2rem;
+	border-radius: 0.5rem;
+}
+
+@keyframes dot {
+	10% {
+		transform: translateX(500px);
+	}
+	100% {
+		transform: translateX(0px);
+		opacity: 0;
+	}
+}
+.radio {
+	align-content: space-between;
+	display: flex;
+	flex-wrap: wrap;
+	label {
+		span {
+			color: darken($colorNavBg, 2%);
+			text-shadow: 0 -2px 3px rgba(black, 0.5);
+		}
+		input {
+			visibility: hidden;
+			&[type=radio]:checked+span {
+				color: white;
+			}
+		}
+	}
+}
