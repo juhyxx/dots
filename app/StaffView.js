@@ -13,13 +13,45 @@ export default class StaffView {
 	}
 
 	showNote(note) {
-		console.log(note);
-		let octaveOffset = 25 + ((4 - note.octave) * 12 * 5),
-			noteOffset = (note.index * 5);
+		let noteOffset = 270 - (note.index * 5);
 
-		console.log(octaveOffset, noteOffset);
+		document.querySelector('#note-container #up1').style.visibility = 'hidden';
+		document.querySelector('#note-container #up4').style.visibility = 'hidden';
+		document.querySelector('#note-container #up3').style.visibility = 'hidden';
+		document.querySelector('#note-container #up2').style.visibility = 'hidden';
 
-		this.el.setAttribute('transform', `translate(0, ${octaveOffset - noteOffset})`);
+		document.querySelector('#note-container #down4').style.visibility = 'hidden';
+		document.querySelector('#note-container #down3').style.visibility = 'hidden';
+		document.querySelector('#note-container #down2').style.visibility = 'hidden';
+		document.querySelector('#note-container #down1').style.visibility = 'hidden';
+		if (note.index > 66) {
+			document.querySelector('#note-container #up4').style.visibility = 'visible';
+		}
+		if (note.index > 64) {
+			document.querySelector('#note-container #up3').style.visibility = 'visible';
+		}
+		if (note.index > 62) {
+			document.querySelector('#note-container #up2').style.visibility = 'visible';
+		}
+		if (note.index > 60) {
+			document.querySelector('#note-container #up1').style.visibility = 'visible';
+		}
+		if (note.index < 50) {
+			document.querySelector('#note-container #down1').style.visibility = 'visible';
+		}
+		if (note.index < 48) {
+			document.querySelector('#note-container #down2').style.visibility = 'visible';
+		}
+		if (note.index < 46) {
+			document.querySelector('#note-container #down3').style.visibility = 'visible';
+		}
+		if (note.index < 44) {
+			document.querySelector('#note-container #down4').style.visibility = 'visible';
+		}
+
+		console.log(note.index);
+
+		this.el.setAttribute('transform', `translate(0, ${noteOffset})`);
 	}
 
 }
