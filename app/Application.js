@@ -1,4 +1,5 @@
 import StaffView from 'StaffView.js';
+import { $ } from 'shortcuts.js';
 
 export default class Application {
 
@@ -19,7 +20,11 @@ export default class Application {
 	}
 
 	get time() {
-		return 3;
+		return this._time || 3;
+	}
+
+	set time(time) {
+		this._time = time;
 	}
 
 	static run() {
@@ -29,19 +34,24 @@ export default class Application {
 	constructor() {
 		this.staffView = new StaffView('svg #note');
 
-		document.querySelector('nav button').addEventListener('click', () => {
+		this._results = {};
+
+		$('nav button').addEventListener('click', () => {
 			if (this._interval) {
 				clearTimeout(this._interval);
 			} else {
 				this.runTest();
 			}
 		});
-		document.querySelector('#piano').addEventListener('click', (e) => {
+		$('#piano').addEventListener('click', (e) => {
 			let value = e.target.getAttribute('value');
 
 			if (value) {
 				this.checkResult(this.notes.indexOf(value));
 			}
+		});
+		$('#range').addEventListener('change', (e) => {
+			this.time = parseInt(e.target.value, 10);
 		});
 	}
 
@@ -55,10 +65,18 @@ export default class Application {
 	}
 
 	resultOk() {
-		console.log('OK');
+		this._results[this.note.midi] = this._results[this.note.midi] || {
+			ok: 0,
+			fail: 0
+		};
+		this._results[this.note.midi].ok = this._results[this.note.midi].ok + 1;
 	}
 	resultFail() {
-		console.log('fail');
+		this._results[this.note.midi] = this._results[this.note.midi] || {
+			ok: 0,
+			fail: 0
+		};
+		this._results[this.note.midi].fail = this._results[this.note.midi].fail + 1;
 	}
 
 
@@ -68,7 +86,7 @@ export default class Application {
 	}
 
 	get note() {
-		return this.note;
+		return this._note;
 	}
 
 	set note(note) {
@@ -80,15 +98,19 @@ export default class Application {
 		this.counter = this.counter || 0;
 		this.counter++;
 		clearTimeout(this._interval);
-		this.note = this.getRandom({min: 38,max: 67});
+		this.note = this.getRandom({min: 38,max: 77});
 		//this.note = this.midiNotes[78];
 		this._interval = setTimeout(this.onTimeout.bind(this), (this.time * 1000) + 100);
 	}
 
 	getRandom({min, max}) {
 		let notes = this.getWithoutHalfTones(this.midiNotes.slice(min, max));
+		let note = this.randomItem(notes);
 
-		return this.randomItem(notes);
+		while (note === this.note) {
+			note = this.randomItem(notes);
+		}
+		return note;
 	}
 
 	randomItem(arr) {

@@ -16,17 +16,17 @@ svg {
 	0% {
 		transform: translate3d(470px, 0 ,0);
 	}
-	50% {
-		fill: black;
+	70% {
+	
 		opacity: 1;
 	}
 	100% {
 		transform: translate3d(30px, 0 ,0);
 		opacity: 0;
-		fill: red;
+
 	}
 }
-#note-template  *{
-	fill:red;
-	stroke: red;
+
+#note-template {
+	visibility: hidden;
 }

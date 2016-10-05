@@ -40,7 +40,7 @@ export default class StaffView {
 		}
 		node.removeAttribute('id');
 		node.id = 'animation-container';
-		node.setAttribute('style', `animation: dot ${time}s ease-in !important;`);
+		node.setAttribute('style', `animation: dot ${time + 0.1}s ease-in !important;`);
 		$('svg').appendChild(node);
 		return $('svg #animation-container');
 	}
@@ -63,32 +63,6 @@ export default class StaffView {
 		$('#down3', container).style.visibility = 'hidden';
 		$('#down2', container).style.visibility = 'hidden';
 		$('#down1', container).style.visibility = 'hidden';
-		/*if (note.midi > 66) {
-			$('#up4', container).style.visibility = 'visible';
-		}
-		if (note.midi > 64) {
-			$('#up3', container).style.visibility = 'visible';
-		}
-		if (note.midi > 62) {
-			$('#up2', container).style.visibility = 'visible';
-		}
-		if (note.midi > 60) {
-			$('#up1', container).style.visibility = 'visible';
-		}
-		if (note.midi < 50) {
-			$('#down1', container).style.visibility = 'visible';
-		}
-		if (note.midi < 48) {
-			$('#down2', container).style.visibility = 'visible';
-		}
-		if (note.midi < 46) {
-			$('#down3', container).style.visibility = 'visible';
-		}
-		if (note.midi < 44) {
-			$('#down4', container).style.visibility = 'visible';
-		}*/
-
-
 
 
 		switch (note.midi) {
