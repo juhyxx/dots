@@ -1,57 +1,124 @@
+import { $ } from 'shortcuts.js';
+
 export default class StaffView {
 
 	constructor(selector) {
 		this.el = selector;
 	}
 
+	get min() {
+		return 38;
+	}
+	get max() {
+		return 77;
+	}
+
+	get notes() {
+		return new Array(this.max - this.min)
+			.fill(undefined)
+			.map((item, index) => this.min + index)
+			.filter((item, index) => ([1, 3, 6, 8, 10].indexOf((item) % 12) < 0))
+			.reduce((prev, item, index) => {
+				prev[item] = index;
+				return prev;
+			}, {});
+	}
 	set el(selector) {
-		this._el = document.querySelector('svg #note');
+		this._el = $('svg #note');
 	}
 
 	get el() {
 		return this._el;
 	}
 
-	showNote(note) {
-		let noteOffset = 270 - (note.index * 5);
+	cloneTemplate(time) {
+		let container = $('svg #animation-container');
+		let node = $('svg #note-template').cloneNode(true);
 
-		document.querySelector('#note-container #up1').style.visibility = 'hidden';
-		document.querySelector('#note-container #up4').style.visibility = 'hidden';
-		document.querySelector('#note-container #up3').style.visibility = 'hidden';
-		document.querySelector('#note-container #up2').style.visibility = 'hidden';
+		if (container) {
+			container.remove();
+		}
+		node.removeAttribute('id');
+		node.id = 'animation-container';
+		node.setAttribute('style', `animation: dot ${time}s ease-in !important;`);
+		$('svg').appendChild(node);
+		return $('svg #animation-container');
+	}
 
-		document.querySelector('#note-container #down4').style.visibility = 'hidden';
-		document.querySelector('#note-container #down3').style.visibility = 'hidden';
-		document.querySelector('#note-container #down2').style.visibility = 'hidden';
-		document.querySelector('#note-container #down1').style.visibility = 'hidden';
-		if (note.index > 66) {
-			document.querySelector('#note-container #up4').style.visibility = 'visible';
-		}
-		if (note.index > 64) {
-			document.querySelector('#note-container #up3').style.visibility = 'visible';
-		}
-		if (note.index > 62) {
-			document.querySelector('#note-container #up2').style.visibility = 'visible';
-		}
-		if (note.index > 60) {
-			document.querySelector('#note-container #up1').style.visibility = 'visible';
-		}
-		if (note.index < 50) {
-			document.querySelector('#note-container #down1').style.visibility = 'visible';
-		}
-		if (note.index < 48) {
-			document.querySelector('#note-container #down2').style.visibility = 'visible';
-		}
-		if (note.index < 46) {
-			document.querySelector('#note-container #down3').style.visibility = 'visible';
-		}
-		if (note.index < 44) {
-			document.querySelector('#note-container #down4').style.visibility = 'visible';
+	showNote(note, time) {
+		let noteOffset = -(parseInt(this.notes[note.midi], 10) * 5);
+		//let noteOffset = 225 - (55 * 5);
+		let container = this.cloneTemplate(time);
+
+		if (isNaN(noteOffset)) {
+			debugger
 		}
 
-		console.log(note.index);
+		$('#up1', container).style.visibility = 'hidden';
+		$('#up4', container).style.visibility = 'hidden';
+		$('#up3', container).style.visibility = 'hidden';
+		$('#up2', container).style.visibility = 'hidden';
 
-		this.el.setAttribute('transform', `translate(0, ${noteOffset})`);
+		$('#down4', container).style.visibility = 'hidden';
+		$('#down3', container).style.visibility = 'hidden';
+		$('#down2', container).style.visibility = 'hidden';
+		$('#down1', container).style.visibility = 'hidden';
+		/*if (note.midi > 66) {
+			$('#up4', container).style.visibility = 'visible';
+		}
+		if (note.midi > 64) {
+			$('#up3', container).style.visibility = 'visible';
+		}
+		if (note.midi > 62) {
+			$('#up2', container).style.visibility = 'visible';
+		}
+		if (note.midi > 60) {
+			$('#up1', container).style.visibility = 'visible';
+		}
+		if (note.midi < 50) {
+			$('#down1', container).style.visibility = 'visible';
+		}
+		if (note.midi < 48) {
+			$('#down2', container).style.visibility = 'visible';
+		}
+		if (note.midi < 46) {
+			$('#down3', container).style.visibility = 'visible';
+		}
+		if (note.midi < 44) {
+			$('#down4', container).style.visibility = 'visible';
+		}*/
+
+
+
+
+		switch (note.midi) {
+			case 38:
+				$('#down4', container).style.visibility = 'visible';
+			case 40:
+			case 41:
+				$('#down3', container).style.visibility = 'visible';
+			case 43:
+			case 45:
+				$('#down2', container).style.visibility = 'visible';
+			case 47:
+			case 48:
+				$('#down1', container).style.visibility = 'visible';
+		}
+		switch (note.midi) {
+			case 76:
+				$('#up3', container).style.visibility = 'visible';
+			case 74:
+			case 72:
+				$('#up2', container).style.visibility = 'visible';
+			case 69:
+			case 71:
+				$('#up1', container).style.visibility = 'visible';
+
+		}
+
+		console.log(note);
+
+		$('#note', container).setAttribute('transform', `translate(0, ${noteOffset})`);
 	}
 
 }
