@@ -1,0 +1,31 @@
+@import "variables";
+
+#progress {
+	display: flex;
+	background-color: rgba($colorBase, 0.5);
+	border-radius: 0.8rem;
+	font-size: 0.7rem;
+	margin: 0.5rem;
+	box-shadow: 0 0 3px rgba(black, 0.5);
+	div {
+		border-radius: 0.5rem;
+		text-align: center;
+		flex-grow: 1;
+		background-color: rgba(gray, 0.3);
+		margin: 4px;
+		border: 1px solid darken($colorBase, 0%);
+		color: white;
+		box-shadow: inset 0 1px 1px rgba(black, 0.5);
+		min-width: 2rem;
+	}
+	.ok {
+		background-color: rgba(darken(green, 10%), 0.6);
+		border-top-right-radius: 2px;
+		border-bottom-right-radius: 2px;
+	}
+	.fail {
+		background-color: rgba(darken(red, 20%), 0.6);
+		border-top-left-radius: 2px;
+		border-bottom-left-radius: 2px;
+	}
+}

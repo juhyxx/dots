@@ -7,21 +7,31 @@
   <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height, target-densitydpi=device-dpi" />
   <title>Dots for musical idiots</title>
   <link rel="stylesheet" href="app.css">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css">
   <script src="/vendor.js"></script>
   <script src="/app.js"></script>
   <script>require('initialize');</script>
 </head>
 <body>
-	<nav>Dots (for musical idiots)
+	<nav>
+		<div>
+		Dots (for musical idiots)
+		</div>
 		<!--div class="radio">
 			<label><input type="radio" name="staff" value="F"><span>Violin key</span></label>
 			<label><input type="radio" name="staff" value="Bass"><span>Bass key</span></label>
 			<label><input type="radio" name="staff" value="both"><span>Both keys</span></label>
 		</div-->
-		<button>Run</button>
-		<input type="range" min="1" max="10" id="range">
+		<div>
+			Fast <input type="range" min="1" max="10" id="range"> Slow
+			<button><i class="fa fa-play"></i></button>
+		</div>
 	</nav>
   <div id="app">
+	  <div id="progress" class="level50">
+		  <div class="ok">0</div>
+		  <div class="fail">0</div>
+	  </div>
 	  <svg version="1.0" encoding="UTF-8" width="100%" preserveAspectRatio="xMinYMin slice" viewBox="0 0 560 200">
 
 		<path transform="translate(20, 58) scale(0.1)"

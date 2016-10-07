@@ -33,13 +33,16 @@ export default class Application {
 
 	constructor() {
 		this.staffView = new StaffView('svg #note');
-
 		this._results = {};
 
 		$('nav button').addEventListener('click', () => {
 			if (this._interval) {
+				$('nav button').innerHTML = '<i class="fa fa-play"></i>';
 				clearTimeout(this._interval);
+				$('body').className = '';
 			} else {
+				$('body').className = 'play';
+				$('nav button').innerHTML = '<i class="fa fa-stop"></i>';
 				this.runTest();
 			}
 		});
@@ -62,6 +65,24 @@ export default class Application {
 		} else {
 			this.resultFail();
 		}
+
+	}
+
+	updateProgress() {
+		let fail = 0,
+			ok = 0;
+
+		Object.keys(this._results).forEach(key => {
+			let item = this._results[key];
+			fail = fail + item.fail;
+			ok = ok + item.ok;
+		});
+
+
+		$('#progress .ok').style['flex-grow'] = ok;
+		$('#progress .ok').innerHTML = ok;
+		$('#progress .fail').style['flex-grow'] = fail;
+		$('#progress .fail').innerHTML = fail;
 	}
 
 	resultOk() {
@@ -70,6 +91,7 @@ export default class Application {
 			fail: 0
 		};
 		this._results[this.note.midi].ok = this._results[this.note.midi].ok + 1;
+		this.updateProgress();
 	}
 	resultFail() {
 		this._results[this.note.midi] = this._results[this.note.midi] || {
@@ -77,6 +99,7 @@ export default class Application {
 			fail: 0
 		};
 		this._results[this.note.midi].fail = this._results[this.note.midi].fail + 1;
+		this.updateProgress();
 	}
 
 

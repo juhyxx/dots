@@ -1,0 +1,19 @@
+@import "variables";
+
+.radio {
+	align-content: space-between;
+	display: flex;
+	flex-wrap: wrap;
+	label {
+		span {
+			color: darken($colorBase, 2%);
+			text-shadow: 0 -2px 3px rgba(black, 0.5);
+		}
+		input {
+			visibility: hidden;
+			&[type=radio]:checked+span {
+				color: white;
+			}
+		}
+	}
+}
