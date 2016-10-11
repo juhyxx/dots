@@ -5,8 +5,9 @@
   <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
   <!-- WARNING: for iOS 7, remove the width=device-width and height=device-height attributes. See https://issues.apache.org/jira/browse/CB-4323 -->
   <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height, target-densitydpi=device-dpi" />
-  <title>Dots for musical idiots</title>
+  <title>Dots for musical idiots 0.1</title>
   <link rel="stylesheet" href="app.css">
+  <meta name="description" content="Need to learn musical notes? Need to pratice reading again and again? Try this.">
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css">
   <script src="vendor.js"></script>
   <script src="app.js"></script>
@@ -27,7 +28,23 @@
 			<div class="fail">0</div>
 		</div>
 		<div>
-			<div class="speed"><div class="ico slow"></div> <input type="range" min="1" max="10" id="range"> <div class="ico fast"></div></div>
+			<div class="speed"><div class="ico slow"></div>
+				<input type="range"  id="range" min="1" max="10"q list="time"> <div class="ico fast">
+				<datalist id="time" >
+					<option>1</option>
+					<option>2</option>
+					<option>3</option>
+					<option>4</option>
+					<option>5</option>
+					<option>6</option>
+					<option>7</option>
+					<option>8</option>
+					<option>9</option>
+					<option>10</option>
+				</datalist>
+				</div></div>
+
+			</div></div>
 		</div>
 		<button><i class="fa fa-play"></i></button>
 	</nav>

@@ -6,9 +6,6 @@ export default class Application {
 	get notes() {
 		return Object.freeze(['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B']);
 	}
-	get basicNotes() {
-		return Object.freeze(['C', 'D', 'E', 'F', 'G', 'A', 'B']);
-	}
 	get midiNotes() {
 		return this._midiNotes = this._midiNotes || Object.freeze(new Array(128).fill(undefined).map((item, index) => {
 			return Object.freeze({
@@ -17,6 +14,10 @@ export default class Application {
 				octave: Math.floor(index / 12)
 			});
 		}));
+	}
+
+	getWithoutHalfTones(notes) {
+		return notes.filter((item, index) => ([1, 3, 6, 8, 10].indexOf(item.midi % 12) < 0));
 	}
 
 	get time() {
@@ -31,12 +32,23 @@ export default class Application {
 		return (new this);
 	}
 
+	get note() {
+		return this._note;
+	}
+
+	set note(note) {
+		this._note = note;
+		this.staffView.showNote(this._note, this.time);
+	}
+
 	constructor() {
 		this.staffView = new StaffView('svg #note');
 		this._results = {};
+		this.registerHandlers();
+	}
 
+	registerHandlers() {
 		$('nav button').addEventListener('click', () => {
-			console.log(this._interval);
 			if (this._interval) {
 				$('nav button').innerHTML = '<i class="fa fa-play"></i>';
 				clearTimeout(this._interval);
@@ -106,19 +118,9 @@ export default class Application {
 		this.updateProgress();
 	}
 
-
 	onTimeout() {
-		this.resultFail();
+		this.checkResult();
 		this.runTest();
-	}
-
-	get note() {
-		return this._note;
-	}
-
-	set note(note) {
-		this._note = note;
-		this.staffView.showNote(this._note, this.time);
 	}
 
 	runTest() {
@@ -126,7 +128,6 @@ export default class Application {
 		this.counter++;
 		clearTimeout(this._interval);
 		this.note = this.getRandom({min: 38,max: 77});
-		//this.note = this.midiNotes[78];
 		this._interval = setTimeout(this.onTimeout.bind(this), (this.time * 1000) + 100);
 	}
 
@@ -148,8 +149,5 @@ export default class Application {
 		return Math.floor(Math.random() * (max - min)) + min;
 	}
 
-	getWithoutHalfTones(notes) {
-		return notes.filter((item, index) => ([1, 3, 6, 8, 10].indexOf(item.midi % 12) < 0));
-	}
 
 }

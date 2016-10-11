@@ -47,12 +47,7 @@ export default class StaffView {
 
 	showNote(note, time) {
 		let noteOffset = -(parseInt(this.notes[note.midi], 10) * 5);
-		//let noteOffset = 225 - (55 * 5);
 		let container = this.cloneTemplate(time);
-
-		if (isNaN(noteOffset)) {
-			debugger
-		}
 
 		$('#up1', container).style.visibility = 'hidden';
 		$('#up4', container).style.visibility = 'hidden';
@@ -63,7 +58,6 @@ export default class StaffView {
 		$('#down3', container).style.visibility = 'hidden';
 		$('#down2', container).style.visibility = 'hidden';
 		$('#down1', container).style.visibility = 'hidden';
-
 
 		switch (note.midi) {
 			case 38:
@@ -89,8 +83,6 @@ export default class StaffView {
 				$('#up1', container).style.visibility = 'visible';
 
 		}
-
-		console.log(note);
 
 		$('#note', container).setAttribute('transform', `translate(0, ${noteOffset})`);
 	}
