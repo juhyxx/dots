@@ -2,6 +2,8 @@
 
 #piano {
 	visibility: hidden;
+	transition: opacity 1s;
+	opacity: 0;
 	display: flex;
 	div {
 		border: 1px solid black;
@@ -33,4 +35,5 @@
 }
 body.play  #piano {
 	visibility: visible;
+	opacity: 1;
 }

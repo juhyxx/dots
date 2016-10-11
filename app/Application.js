@@ -36,12 +36,16 @@ export default class Application {
 		this._results = {};
 
 		$('nav button').addEventListener('click', () => {
+			console.log(this._interval);
 			if (this._interval) {
 				$('nav button').innerHTML = '<i class="fa fa-play"></i>';
 				clearTimeout(this._interval);
+				this._interval = undefined;
 				$('body').className = '';
 			} else {
 				$('body').className = 'play';
+				this._results = {};
+				this.updateProgress();
 				$('nav button').innerHTML = '<i class="fa fa-stop"></i>';
 				this.runTest();
 			}
@@ -79,9 +83,9 @@ export default class Application {
 		});
 
 
-		$('#progress .ok').style['flex-grow'] = ok;
+		$('#progress .ok').style['flex-grow'] = ok || 1;
+		$('#progress .fail').style['flex-grow'] = fail || 1;
 		$('#progress .ok').innerHTML = ok;
-		$('#progress .fail').style['flex-grow'] = fail;
 		$('#progress .fail').innerHTML = fail;
 	}
 

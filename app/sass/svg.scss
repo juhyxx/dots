@@ -30,3 +30,19 @@ svg {
 #note-template {
 	visibility: hidden;
 }
+svg #animation-container {
+	fill: rgba(black, 0);
+	line {
+		stroke: rgba(black, 0);
+	}
+}
+
+body.play {
+	svg #animation-container {
+		fill: black;
+		line {
+			stroke: black;
+
+		}
+	}
+}
