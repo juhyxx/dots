@@ -57,6 +57,7 @@ export default class Application {
 			} else {
 				$('body').className = 'play';
 				this._results = {};
+				this.updateStats();
 				this.updateProgress();
 				$('nav button').innerHTML = '<i class="fa fa-stop"></i>';
 				this.runTest();
@@ -81,7 +82,7 @@ export default class Application {
 		} else {
 			this.resultFail();
 		}
-
+		this.updateStats();
 	}
 
 	updateProgress() {
@@ -93,8 +94,6 @@ export default class Application {
 			fail = fail + item.fail;
 			ok = ok + item.ok;
 		});
-
-
 		$('#progress .ok').style['flex-grow'] = ok || 1;
 		$('#progress .fail').style['flex-grow'] = fail || 1;
 		$('#progress .ok').innerHTML = ok;
@@ -127,7 +126,7 @@ export default class Application {
 		this.counter = this.counter || 0;
 		this.counter++;
 		clearTimeout(this._interval);
-		this.note = this.getRandom({min: 38,max: 77});
+		this.note = this.getRandom({min: 43,max: 77});
 		this._interval = setTimeout(this.onTimeout.bind(this), (this.time * 1000) + 100);
 	}
 
@@ -147,6 +146,33 @@ export default class Application {
 
 	random(min, max) {
 		return Math.floor(Math.random() * (max - min)) + min;
+	}
+
+	updateStats() {
+		$('#stats').innerHTML = '';
+
+		this.midiNotes.forEach((item, index) => {
+			if (index >= 43 && index < 77) {
+				let el = document.createElement('div');
+				if (item.name.match('♯')) {
+					let halftone = document.createElement('div');
+					halftone.className = 'halftone';
+					$('#stats div:not(.halftone):last-child').appendChild(halftone);
+				} else {
+					if (this._results[index]) {
+						el.innerHTML = `${this._results[index].fail}`;
+						if (this._results[index].fail > 0) {
+							el.className = 'fail level' + Math.min(this._results[index].fail, 10);
+						}
+					} else {
+						el.className = 'empty';
+					}
+					$('#stats').appendChild(el);
+				}
+
+
+			}
+		});
 	}
 
 

@@ -1,12 +1,14 @@
 @import "variables";
 
-#piano {
-	visibility: hidden;
-	transition: opacity 1s;
-	opacity: 0;
-	display: flex;
-	div {
 
+#stats{
+	display: flex;
+	font-size: 0.5rem;
+	background-color: rgba(darken($colorBase, 5%), 0.9);
+	padding: 0.5rem;
+		border-radius: 0.3rem;
+		box-shadow: inset 0 1px 1px rgba(black, 0.5);
+	div {
 		border: 1px solid black;
 		background-color: white;
 		width: 1rem;
@@ -14,13 +16,13 @@
 		border-radius: 3px;
 		font-size: 0.5rem;
 		color: gray;
-		box-shadow: 0 0 3px rgba(black, 0.5), inset 0 -3px 8px rgba(black, 0.5);
 		text-align: center;
 		cursor: pointer;
 		position: relative;
 		&:hover {
 			background-color: orange;
 		}
+
 		&.halftone {
 			width: 0.5rem;
 			height: 2rem;
@@ -31,9 +33,21 @@
 			top: -1px;
 			z-index: 1;
 		}
+
+		&.empty {
+			background-color: gray;
+		}
+		&.fail {
+			$redColor: lighten(red, 20%);
+			@for $i from 1 through 10 {
+
+				&.level#{$i} {
+					background-color: darken($redColor, $i*5%);
+				}
+			}
+
+
+		}
 	}
-}
-body.play  #piano {
-	visibility: visible;
-	opacity: 1;
+
 }

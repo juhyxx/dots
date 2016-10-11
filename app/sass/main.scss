@@ -30,6 +30,12 @@ nav,footer {
 		}
 	}
 }
+nav {
+	border-top: 0;
+}
+footer {
+	border-bottom: 0;
+}
 html {
 	font-size: 150%;
 	* {
