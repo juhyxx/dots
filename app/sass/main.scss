@@ -1,8 +1,7 @@
-@import "https://fonts.googleapis.com/css?family=Herr+Von+Muellerhoff";
-@import "https://fonts.googleapis.com/css?family=Roboto";
+@import 'https://fonts.googleapis.com/css?family=Griffy';
 @import "variables";
 
-nav {
+nav,footer {
 	color: white;
 	background-color: $colorBase;
 	padding: 0.5rem;
@@ -13,11 +12,28 @@ nav {
 	box-shadow: inset 0 0 60px rgba(black, 0.2), 0 0 20px rgba(black, 0.4);
 	display: flex;
 	justify-content: space-between;
+	align-items: center;
+	flex-wrap: wrap;
+	text-shadow: 0 -1px 0 black;
+	h1 {
+		font-size: 1rem;
+		font-weight: normal;
+		margin: 0;
+		text-transform: uppercase;
+		padding: 0;
+		i {
+			display: block;
+			text-transform: lowercase;;
+			font-style: normal;
+			font-size: 0.7rem;
+			color: rgba(white, 0.5);
+		}
+	}
 }
 html {
-	font-size: 300%;
+	font-size: 150%;
 	* {
-		font-family: "Herr Von Muellerhoff", cursive;
+		font-family: 'Griffy', cursive;
 	}
 }
 body {
@@ -26,6 +42,13 @@ body {
 	background-size: 100% 5px;
 	padding: 0;
 	margin: 0;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	height: 100vh;
+}
+main {
+	flex-grow: 1;
 }
 
 label {
@@ -43,7 +66,24 @@ button {
 	width: 1rem;
 	height: 1rem;
 	border-radius: 0.5rem;
-	font-family: "Roboto", sans-serif;
 	background-color: $colorBase;
 	color: white;
+}
+.speed {
+	display: flex;
+	margin-right: 1rem;
+
+
+	.ico {
+		width: 1rem;
+		height: 1rem;
+		background-size: cover;
+		margin: 0.25rem;
+		&.slow {
+			background-image: url('slow.svg');
+		}
+		&.fast {
+			background-image: url('fast.svg');
+		}
+	}
 }

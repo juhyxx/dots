@@ -54,7 +54,7 @@ export default class Application {
 			}
 		});
 		$('#range').addEventListener('change', (e) => {
-			this.time = parseInt(e.target.value, 10);
+			this.time = 11 - parseInt(e.target.value, 10);
 		});
 	}
 
