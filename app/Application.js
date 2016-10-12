@@ -1,6 +1,7 @@
 import StaffView from 'StaffView.js';
 import { $ } from 'shortcuts.js';
 import RandomGenerator from 'RandomGenerator.js';
+import AudioAnalyzer from 'AudioAnalyzer.js';
 import { notes, midiNotes, getWithoutHalfTones } from 'notes.js';
 
 export default class Application {
@@ -28,6 +29,7 @@ export default class Application {
 
 	constructor() {
 		this.randomGenerator = new RandomGenerator({min: 43,max: 77});
+		this.audioAnalyzer = new AudioAnalyzer($('canvas'));
 		this.staffView = new StaffView('svg #note');
 		this._results = {};
 		this.registerHandlers();
