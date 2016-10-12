@@ -1,24 +1,9 @@
 import StaffView from 'StaffView.js';
 import { $ } from 'shortcuts.js';
+import RandomGenerator from 'RandomGenerator.js';
+import { notes, midiNotes, getWithoutHalfTones } from 'notes.js';
 
 export default class Application {
-
-	get notes() {
-		return Object.freeze(['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B']);
-	}
-	get midiNotes() {
-		return this._midiNotes = this._midiNotes || Object.freeze(new Array(128).fill(undefined).map((item, index) => {
-			return Object.freeze({
-				midi: index,
-				name: this.notes[index % 12],
-				octave: Math.floor(index / 12)
-			});
-		}));
-	}
-
-	getWithoutHalfTones(notes) {
-		return notes.filter((item, index) => ([1, 3, 6, 8, 10].indexOf(item.midi % 12) < 0));
-	}
 
 	get time() {
 		return this._time || 3;
@@ -42,9 +27,11 @@ export default class Application {
 	}
 
 	constructor() {
+		this.randomGenerator = new RandomGenerator({min: 43,max: 77});
 		this.staffView = new StaffView('svg #note');
 		this._results = {};
 		this.registerHandlers();
+		this.updateStats();
 	}
 
 	registerHandlers() {
@@ -67,7 +54,7 @@ export default class Application {
 			let value = e.target.getAttribute('value');
 
 			if (value) {
-				this.checkResult(this.notes.indexOf(value));
+				this.checkResult(notes.indexOf(value));
 			}
 		});
 		$('#range').addEventListener('change', (e) => {
@@ -76,13 +63,31 @@ export default class Application {
 	}
 
 	checkResult(index) {
+		this._results[this.note.midi] = this._results[this.note.midi] || {
+			ok: 0,
+			fail: 0
+		};
 		if (index === this.note.midi % 12) {
-			this.resultOk();
+			this._results[this.note.midi].ok = this._results[this.note.midi].ok + 1;
 			this.runTest();
 		} else {
-			this.resultFail();
+			this._results[this.note.midi].fail = this._results[this.note.midi].fail + 1;
 		}
+		this.updateProgress();
 		this.updateStats();
+	}
+
+	onTimeout() {
+		this.checkResult();
+		this.runTest();
+	}
+
+	runTest() {
+		this.counter = this.counter || 0;
+		this.counter++;
+		clearTimeout(this._interval);
+		this.note = this.randomGenerator.getNote();
+		this._interval = setTimeout(this.onTimeout.bind(this), (this.time * 1000) + 100);
 	}
 
 	updateProgress() {
@@ -100,58 +105,10 @@ export default class Application {
 		$('#progress .fail').innerHTML = fail;
 	}
 
-	resultOk() {
-		this._results[this.note.midi] = this._results[this.note.midi] || {
-			ok: 0,
-			fail: 0
-		};
-		this._results[this.note.midi].ok = this._results[this.note.midi].ok + 1;
-		this.updateProgress();
-	}
-	resultFail() {
-		this._results[this.note.midi] = this._results[this.note.midi] || {
-			ok: 0,
-			fail: 0
-		};
-		this._results[this.note.midi].fail = this._results[this.note.midi].fail + 1;
-		this.updateProgress();
-	}
-
-	onTimeout() {
-		this.checkResult();
-		this.runTest();
-	}
-
-	runTest() {
-		this.counter = this.counter || 0;
-		this.counter++;
-		clearTimeout(this._interval);
-		this.note = this.getRandom({min: 43,max: 77});
-		this._interval = setTimeout(this.onTimeout.bind(this), (this.time * 1000) + 100);
-	}
-
-	getRandom({min, max}) {
-		let notes = this.getWithoutHalfTones(this.midiNotes.slice(min, max));
-		let note = this.randomItem(notes);
-
-		while (note === this.note) {
-			note = this.randomItem(notes);
-		}
-		return note;
-	}
-
-	randomItem(arr) {
-		return arr[this.random(0, arr.length - 1)];
-	}
-
-	random(min, max) {
-		return Math.floor(Math.random() * (max - min)) + min;
-	}
-
 	updateStats() {
 		$('#stats').innerHTML = '';
 
-		this.midiNotes.forEach((item, index) => {
+		midiNotes.forEach((item, index) => {
 			if (index >= 43 && index < 77) {
 				let el = document.createElement('div');
 				if (item.name.match('♯')) {
@@ -160,20 +117,18 @@ export default class Application {
 					$('#stats div:not(.halftone):last-child').appendChild(halftone);
 				} else {
 					if (this._results[index]) {
-						el.innerHTML = `${this._results[index].fail}`;
+						el.innerHTML = `${this._results[index].ok}`;
 						if (this._results[index].fail > 0) {
+							el.innerHTML = `${this._results[index].fail}`;
 							el.className = 'fail level' + Math.min(this._results[index].fail, 10);
 						}
 					} else {
 						el.className = 'empty';
 					}
+					el.title = item.name + item.octave;
 					$('#stats').appendChild(el);
 				}
-
-
 			}
 		});
 	}
-
-
 }

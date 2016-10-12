@@ -17,11 +17,7 @@
 		font-size: 0.5rem;
 		color: gray;
 		text-align: center;
-		cursor: pointer;
 		position: relative;
-		&:hover {
-			background-color: orange;
-		}
 
 		&.halftone {
 			width: 0.5rem;
