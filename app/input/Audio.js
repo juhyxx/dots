@@ -1,9 +1,10 @@
-import { getMidiNodeByFreq } from 'notes.js';
+import { getMidiNodeByFreq } from '../notes.js';
+import Input from './Input.js';
 
-export default class AudioAnalyzer {
-
+export default class Audio extends Input {
 
 	constructor(el) {
+		super();
 		this.el = el;
 		let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 		this.analyser = audioCtx.createAnalyser();

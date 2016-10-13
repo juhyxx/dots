@@ -1,4 +1,4 @@
-import { $ } from 'shortcuts.js';
+import { $, $$ } from 'shortcuts.js';
 
 export default class StaffView {
 
@@ -49,16 +49,7 @@ export default class StaffView {
 		let noteOffset = -(parseInt(this.notes[note.midi], 10) * 5);
 		let container = this.cloneTemplate(time);
 
-		$('#up1', container).style.visibility = 'hidden';
-		$('#up4', container).style.visibility = 'hidden';
-		$('#up3', container).style.visibility = 'hidden';
-		$('#up2', container).style.visibility = 'hidden';
-
-		$('#down4', container).style.visibility = 'hidden';
-		$('#down3', container).style.visibility = 'hidden';
-		$('#down2', container).style.visibility = 'hidden';
-		$('#down1', container).style.visibility = 'hidden';
-
+		$$('svg [id^=up], svg [id^=down]').forEach(el => el.style.visibility = 'hidden');
 		switch (note.midi) {
 			case 38:
 				$('#down4', container).style.visibility = 'visible';
@@ -83,7 +74,6 @@ export default class StaffView {
 				$('#up1', container).style.visibility = 'visible';
 
 		}
-
 		$('#note', container).setAttribute('transform', `translate(0, ${noteOffset})`);
 	}
 

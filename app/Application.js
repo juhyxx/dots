@@ -1,7 +1,9 @@
 import StaffView from 'StaffView.js';
 import { $ } from 'shortcuts.js';
 import RandomGenerator from 'RandomGenerator.js';
-import AudioAnalyzer from 'AudioAnalyzer.js';
+import AudioInput from 'input/Audio.js';
+import MidiInput from 'input/Midi.js';
+import OnScreenKeyboardInput from 'input/OnScreenKeyboard.js';
 import { notes, midiNotes, getWithoutHalfTones } from 'notes.js';
 
 export default class Application {
@@ -29,8 +31,11 @@ export default class Application {
 
 	constructor() {
 		this.randomGenerator = new RandomGenerator({min: 43,max: 77});
-		this.audioAnalyzer = new AudioAnalyzer($('canvas'));
 		this.staffView = new StaffView('svg #note');
+		this.input = new OnScreenKeyboardInput($('#piano'));
+		this.input.onSelect(index => {
+			this.checkResult(index);
+		});
 		this._results = {};
 		this.registerHandlers();
 		this.updateStats();
@@ -50,13 +55,6 @@ export default class Application {
 				this.updateProgress();
 				$('nav button').innerHTML = '<i class="fa fa-stop"></i>';
 				this.runTest();
-			}
-		});
-		$('#piano').addEventListener('click', (e) => {
-			let value = e.target.getAttribute('value');
-
-			if (value) {
-				this.checkResult(notes.indexOf(value));
 			}
 		});
 		$('#range').addEventListener('change', (e) => {
