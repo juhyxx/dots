@@ -1,17 +1,35 @@
-import { getMidiNodeByFreq } from '../notes.js';
+import { midiNotes, getMidiNodeByFreq } from '../notes.js';
 import Input from './Input.js';
 
 export default class Audio extends Input {
 
+	get width() {
+		return 1000;
+	}
+
+	get height() {
+		return 200;
+	}
+
+	get canvasContext() {
+		return this.el.getContext('2d');
+	}
+
 	constructor(el) {
 		super();
 		this.el = el;
+		this.el.width = this.width;
+		this.el.height = this.height;
+
 		let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 		this.analyser = audioCtx.createAnalyser();
+		this.analyser.fftSize = Math.pow(2, 14);
 		this.fftSize = this.analyser.fftSize;
 		this.bufferLength = this.analyser.frequencyBinCount;
 		this.dataArray = new Uint8Array(this.bufferLength);
 		this.sampleRate;
+
+
 
 		navigator.getUserMedia(
 			{audio: true},
@@ -19,90 +37,65 @@ export default class Audio extends Input {
 				let input = audioCtx.createMediaStreamSource(stream);
 				input.connect(this.analyser);
 				this.sampleRate = audioCtx.sampleRate;
+
+
 			},
 			(err) => {
 				console.error('The following gUM error occured: ' + err);
 			}
 		);
-		this.renderFreq();
+		this.render();
 	}
 
 	get available() {
 		return navigator.getUserMedia !== undefined;
 	}
 
-	renderTime() {
-		let WIDTH = 300;
-		let HEIGHT = 100;
-		let canvasCtx = this.el.getContext('2d');
+	render() {
+		this.renderVisual = requestAnimationFrame(this.render.bind(this));
+		this.analyser.getByteFrequencyData(this.dataArray);
+		this.canvasContext.fillStyle = 'rgb(119, 74, 15)';
+		this.canvasContext.fillRect(0, 0, this.width, this.height);
 
-		this.renderVisual = requestAnimationFrame(this.renderTime.bind(this));
-
-		this.analyser.getByteTimeDomainData(this.dataArray);
-		canvasCtx.fillStyle = 'rgb(200, 200, 200)';
-		canvasCtx.fillRect(0, 0, WIDTH, HEIGHT);
-		canvasCtx.lineWidth = 2;
-		canvasCtx.strokeStyle = 'rgb(0, 0, 0)';
-		canvasCtx.beginPath();
-
-		let sliceWidth = WIDTH * 1.0 / this.bufferLength;
+		let barWidth = (this.width / this.bufferLength);
+		barWidth = 1;
+		let freqRatio = this.sampleRate / this.fftSize;
+		let barHeight;
 		let x = 0;
 
-		for (let i = 0; i < this.bufferLength; i++) {
-			let v = this.dataArray[i] / 128.0;
-			let y = v * HEIGHT / 2;
 
-			if (i === 0) {
-				canvasCtx.moveTo(x, y);
-			} else {
-				canvasCtx.lineTo(x, y);
+		midiNotes.forEach(item => {
+			if (item.octave > -1) {
+				this.canvasContext.fillStyle = `rgba(0,0,0,0.1)`;
+				this.canvasContext.fillRect(this.width / 4 * Math.log10((item.freq / freqRatio)) * barWidth, 0, 1, this.height);
+				if (item.name === 'C') {
+					this.canvasContext.fillStyle = `rgba(0,0,0,0.7)`;
+					this.canvasContext.fillRect(this.width / 4 * Math.log10((item.freq / freqRatio)) * barWidth, 0, 1, this.height);
+					this.canvasContext.fillText(Math.round(item.freq), 5 + this.width / 4 * Math.log10((item.freq / freqRatio)) * barWidth, 10);
+					this.canvasContext.fillText(Math.round(item.octave), 5 + this.width / 4 * Math.log10((item.freq / freqRatio)) * barWidth, 20);
+				}
 			}
-			x += sliceWidth;
-		}
-
-		canvasCtx.lineTo(this.el.width, this.el.height / 2);
-		canvasCtx.stroke();
-	}
-
-	renderFreq() {
-		let WIDTH = 300;
-		let HEIGHT = 150;
-		let canvasCtx = this.el.getContext('2d');
-
-		this.renderVisual = requestAnimationFrame(this.renderFreq.bind(this));
-
-		this.analyser.getByteFrequencyData(this.dataArray);
-
-		canvasCtx.fillStyle = 'rgb(255, 255, 255)';
-		canvasCtx.fillRect(0, 0, WIDTH, HEIGHT);
-
-		var barWidth = (WIDTH / this.bufferLength) * 2.5;
-		var barHeight;
-		var x = 0;
+		});
 
 		let max = Math.max.apply(this, this.dataArray);
-		let freqRatio = this.sampleRate / this.fftSize;
 
-		for (var i = 0; i < this.bufferLength; i++) {
+
+		for (let i = 0; i < this.bufferLength; i++) {
 			barHeight = this.dataArray[i];
 
-
-			if (barHeight > 180) {
+			if (barHeight > max - 50) {
 				if (barHeight === max) {
 					let freq = freqRatio * i;
-
-					console.log(i, freq, getMidiNodeByFreq(freq));
-
+					let note = getMidiNodeByFreq(freq);
+					this.canvasContext.fillText(note.name + note.octave, this.width / 4 * Math.log10(x), 10);
 				}
-				canvasCtx.fillStyle = `rgb(255,80,80)`;
+				this.canvasContext.fillStyle = `rgb(255,255,255)`;
+				this.canvasContext.fillRect(this.width / 4 * Math.log10(x), this.height - (heightRatio * barHeight), barWidth, barHeight * heightRatio);
 			} else {
-				canvasCtx.fillStyle = `rgb(100,100,100)`;
+				this.canvasContext.fillStyle = `rgba(150,150,130, 0.5)`;
 			}
-			canvasCtx.fillRect(x, HEIGHT - barHeight / 2, barWidth, barHeight / 2);
-
-
-
-			x += barWidth + 1;
+			let heightRatio = (this.height - 20) / 255;
+			x += barWidth;
 		}
 	}
 

@@ -4,7 +4,7 @@ import RandomGenerator from 'RandomGenerator.js';
 import AudioInput from 'input/Audio.js';
 import MidiInput from 'input/Midi.js';
 import OnScreenKeyboardInput from 'input/OnScreenKeyboard.js';
-import { notes, midiNotes, getWithoutHalfTones } from 'notes.js';
+import { notes, midiNotes } from 'notes.js';
 
 export default class Application {
 
@@ -33,6 +33,10 @@ export default class Application {
 		this.randomGenerator = new RandomGenerator({min: 43,max: 77});
 		this.staffView = new StaffView('svg #note');
 		this.input = new OnScreenKeyboardInput($('#piano'));
+		this.audioInput = new AudioInput($('canvas'));
+		this.audioInput.onSelect(index => {
+			this.checkResult(index);
+		});
 		this.input.onSelect(index => {
 			this.checkResult(index);
 		});
@@ -86,7 +90,7 @@ export default class Application {
 		this.counter = this.counter || 0;
 		this.counter++;
 		clearTimeout(this._interval);
-		this.note = this.randomGenerator.getNote();
+		this.note = this.randomGenerator.generate();
 		this._interval = setTimeout(this.onTimeout.bind(this), (this.time * 1000) + 100);
 	}
 
