@@ -11,9 +11,14 @@ let midiNotes = function() {
 	));
 }();
 
+let midiNotesByFreq = midiNotes.reduce((previous, next, index) => {
+	previous[midiNotes[index].freq] = midiNotes[index];
+
+	return previous;
+}, {});
+
 let getMidiNodeByFreq = function(freq) {
 	return midiNotes.reduce((prev, next) => freq > prev.freq ? next : prev, midiNotes[0]);
 };
 
-
-export { midiNotes, notes, getMidiNodeByFreq };
+export { midiNotes, notes, getMidiNodeByFreq, midiNotesByFreq };

@@ -1,4 +1,4 @@
-import { midiNotes, getMidiNodeByFreq } from '../notes.js';
+import { midiNotes, getMidiNodeByFreq, midiNotesByFreq } from '../notes.js';
 import Input from './Input.js';
 
 export default class Audio extends Input {
@@ -22,6 +22,7 @@ export default class Audio extends Input {
 		this.el.height = this.height;
 
 		let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+		this.audioCtx = audioCtx;
 		this.analyser = audioCtx.createAnalyser();
 		this.analyser.fftSize = Math.pow(2, 14);
 		this.fftSize = this.analyser.fftSize;
@@ -29,26 +30,58 @@ export default class Audio extends Input {
 		this.dataArray = new Uint8Array(this.bufferLength);
 		this.sampleRate;
 
-
-
 		navigator.getUserMedia(
 			{audio: true},
 			(stream) => {
 				let input = audioCtx.createMediaStreamSource(stream);
 				input.connect(this.analyser);
 				this.sampleRate = audioCtx.sampleRate;
-
-
 			},
 			(err) => {
 				console.error('The following gUM error occured: ' + err);
 			}
 		);
-		this.render();
+		this.worker = new Worker('analyze.js');
+		this.worker.addEventListener('message', (e) => {
+			this.renderRecognized(e.data);
+		}, false);
+		setInterval(() => {
+
+			this.recognize();
+		}, 500);
 	}
 
 	get available() {
 		return navigator.getUserMedia !== undefined;
+	}
+
+	renderRecognized(data) {
+		this.canvasContext.fillStyle = 'rgb(119, 74, 15)';
+		this.canvasContext.fillRect(0, 0, this.width, this.height);
+		this.canvasContext.fillStyle = `rgb(0,0,0)`;
+
+		midiNotes.forEach(item => {
+			if (item.octave > 2 && item.octave <= 5) {
+
+				let energy = data[item.freq];
+				this.canvasContext.fillStyle = `rgb(0,0,0)`;
+				this.canvasContext.fillRect(30 * (item.midi - 48), 0, 30, energy * 100000);
+
+				this.canvasContext.fillStyle = `rgb(0,255,0)`;
+				this.canvasContext.fillText(item.name + item.octave, 30 * (item.midi - 48), 20);
+			}
+		});
+	}
+
+	recognize() {
+		//this.renderRecognize = requestAnimationFrame(this.recognize.bind(this));
+		this.analyser.getByteTimeDomainData(this.dataArray);
+
+		this.worker.postMessage({
+			frequencies: midiNotes.filter(item => item.octave > 2 && item.octave <= 5).map(item => item.freq),
+			sampleRate: this.audioCtx.sampleRate,
+			buffer: this.dataArray
+		}, [this.dataArray]);
 	}
 
 	render() {

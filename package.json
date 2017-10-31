@@ -12,6 +12,7 @@
     "prod": "brunch build --production"
   },
   "dependencies": {
+    "goertzeljs": "^3.0.4",
     "sass-brunch": "^2.6.3"
   },
   "devDependencies": {
