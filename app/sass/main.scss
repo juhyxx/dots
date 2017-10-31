@@ -5,11 +5,10 @@ nav,footer {
 	color: white;
 	background-color: $colorBase;
 	padding: 0.5rem;
-	background-image: linear-gradient(darken($colorBase, 5%) 1px, darken(yellow, 20%) 2px ,transparent 1px);
+//	background-image: linear-gradient(darken($colorBase, 5%) 1px, darken(yellow, 20%) 2px ,transparent 1px);
 	border-bottom: 2px solid white;
 	border-top: 2px solid white;
 	background-size: 100% 5px;
-	box-shadow: inset 0 0 60px rgba(black, 0.2), 0 0 20px rgba(black, 0.4);
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
@@ -44,7 +43,7 @@ html {
 }
 body {
 	background: lighten($colorBg, 10%);
-	background-image: linear-gradient(darken($colorBg, 2%) 1px, transparent 1px);
+	//background-image: linear-gradient(darken($colorBg, 2%) 1px, transparent 1px);
 	background-size: 100% 5px;
 	padding: 0;
 	margin: 0;

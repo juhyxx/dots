@@ -21,7 +21,7 @@
 		min-width: 2rem;
 		padding: 0.25rem;
 		background-size: 100% 5px;
-		background-image: linear-gradient(darken($colorBase, 5%) 1px, transparent 1px);
+		//background-image: linear-gradient(darken($colorBase, 5%) 1px, transparent 1px);
 		transition: flex-grow 1s;
 	}
 	.ok {
