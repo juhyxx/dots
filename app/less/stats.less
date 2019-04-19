@@ -4,10 +4,10 @@
 #stats{
 	display: flex;
 	font-size: 0.5rem;
-	background-color: rgba(darken($colorBase, 5%), 0.9);
+	background-color: darken(@colorBase, 5%);
 	padding: 0.5rem;
 		border-radius: 0.3rem;
-		box-shadow: inset 0 1px 1px rgba(black, 0.5);
+		box-shadow: inset 0 1px 1px rgba(0,0,0, 0.5);
 	div {
 		border: 1px solid black;
 		background-color: white;
@@ -22,7 +22,7 @@
 		&.halftone {
 			width: 0.5rem;
 			height: 2rem;
-			box-shadow: 0 0 3px rgba(black, 0.5), inset 0 3px 8px rgba(white, 0.5);
+			box-shadow: 0 0 3px rgba(0,0,0, 0.5), inset 0 3px 8px rgba(255,255,255, 0.5);
 			background-color: black;
 			position: absolute;
 			left: 0.7rem;
@@ -34,13 +34,8 @@
 			background-color: gray;
 		}
 		&.fail {
-			$redColor: lighten(red, 20%);
-			@for $i from 1 through 10 {
-
-				&.level#{$i} {
-					background-color: darken($redColor, $i*5%);
-				}
-			}
+			@redColor: lighten(red, 20%);
+	
 
 
 		}

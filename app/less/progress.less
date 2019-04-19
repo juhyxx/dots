@@ -3,35 +3,35 @@
 #progress {
 	flex-grow: 1;
 	display: flex;
-	background-color: rgba(darken($colorBase, 5%), 0.9);
+	background-color: darken(@colorBase, 5%);
 	border-radius: 0.6rem;
 	font-size: 0.7rem;
 
 	margin-right: 1rem;
 	margin-left: 1rem;
-	box-shadow: inset 0 1px 1px rgba(black, 0.5);
+	box-shadow: inset 0 1px 1px rgba(0,0,0, 0.5);
 	div {
 		border-radius: 0.5rem;
 		text-align: center;
 		flex-grow: 1;
-		background-color: rgba(gray, 0.3);
+		background-color: rgba(128,128,128, 0.3);
 		margin: 4px;
-		color: rgba(white, 0.8);
+		color: rgba(255,255,255, 0.8);
 		text-shadow: 0 -1px 0 black;
 		min-width: 2rem;
 		padding: 0.25rem;
 		background-size: 100% 5px;
-		//background-image: linear-gradient(darken($colorBase, 5%) 1px, transparent 1px);
+		//background-image: linear-gradient(darken(@colorBase, 5%) 1px, transparent 1px);
 		transition: flex-grow 1s;
 	}
 	.ok {
-		background-color: $okColor;
+		background-color: @okColor;
 		border-top-right-radius: 2px;
 		border-bottom-right-radius: 2px;
 		margin-right: 0;
 	}
 	.fail {
-		background-color: $failColor;
+		background-color: @failColor;
 		border-top-left-radius: 2px;
 		border-bottom-left-radius: 2px;
 	}

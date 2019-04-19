@@ -12,7 +12,7 @@
     "prod": "brunch build --production"
   },
   "dependencies": {
-    "sass-brunch": "^2.6.3"
+    "less-brunch": "^2.10.0"
   },
   "devDependencies": {
     "auto-reload-brunch": "^2.0.0",
