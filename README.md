@@ -1,33 +1,53 @@
-Dots (for musical idiots) [![Build Status](https://travis-ci.org/juhyxx/dots.svg?branch=master)](https://travis-ci.org/juhyxx/dots)
-====
-Do you really need to read the tiny, ugly nasty black dots?
+# Dots — for musical idiots
 
+A browser game for learning to read sheet music. Notes slide in from the right; name each one before it reaches the orange line.
 
-# Brunch + Babel/ES6
+No server and no build step. Open `index.html` in a browser, or serve the folder with any static server. The music font ([Bravura](https://github.com/steinbergmedia/bravura), SIL Open Font License) is bundled in `fonts/`, so clefs and accidentals render the same everywhere, including offline.
 
-This is a modern JS skeleton for [Brunch](http://brunch.io).
+## Instruments
 
-## Installation
+| Instrument | Staff | Answer with |
+|---|---|---|
+| Piano | Grand staff (treble + bass, always shown). Lessons start with treble (G) clef, then move to bass (F) clef | On-screen keyboard |
+| Guitar | Treble clef, written an octave above sounding pitch | 6-string fretboard, frets 0–12 |
+| Bass guitar | Bass clef, written an octave above sounding pitch | 4-string fretboard, frets 0–12 |
 
-Clone this repo manually or use `brunch new dir -s brunch/with-es6`
+Every instrument also accepts:
+- **Computer keyboard:** letters `C D E F G A` plus `B` or `H`, depending on the note-name setting. Typed letters never check the octave.
+- **MIDI keyboard:** uses Web MIDI (Chrome or Edge). Connect it from the MIDI chip or in Settings. For guitar and bass, MIDI input is read as sounding pitch. On the start and results screens, any MIDI key works like Enter, and it doesn't make a sound there.
 
-## Getting started
+## Practice
 
-* Install (if you don't have them):
-    * [Node.js](http://nodejs.org): `brew install node` on OS X
-    * [Brunch](http://brunch.io): `npm install -g brunch`
-    * Brunch plugins and app dependencies: `npm install`
-* Run:
-    * `brunch watch --server` — watches the project with continuous rebuild. This will also launch HTTP server with [pushState](https://developer.mozilla.org/en-US/docs/Web/Guide/API/DOM/Manipulating_the_browser_history).
-    * `brunch build --production` — builds minified project for production
-* Learn:
-    * `public/` dir is fully auto-generated and served by HTTP server.  Write your code in `app/` dir.
-    * Place static files you want to be copied from `app/assets/` to `public/`.
-    * [Brunch site](http://brunch.io), [Getting started guide](https://github.com/brunch/brunch-guide#readme)
+Each instrument has a **Practice** card at the top of its level list. It's free play: there's no score and no clock. Every note you play (on screen or on MIDI) appears on the staff right away with its name, and black keys are shown as sharps. Notes played together (within 150 ms, e.g. a chord on MIDI) are written as one chord and named: an interval for two notes ("major 3rd"), or a chord symbol for three or more: triads, sixths and sevenths (C, Am7, G/B), extended chords (9, 11, 13, add9, 6/9) and altered ones (7♭9, 7♯9, 7♯11, 7♭13, 13♭9…). Typical voicings that leave out the 5th, 9th or 11th are recognised too. Typing a letter shows that note on the staff and lights it up on the instrument.
 
-## ES7
+## Levels
 
-To use proposed JS features not included into ES6, do this:
+Guitar and bass have 10 levels each and start with the open strings. Piano has 19 levels and covers all 88 keys (A0–C8): first the treble clef, then the bass clef, each followed by its ledger-line notes, then both staves together. The last lessons cover the extremes: up to five ledger lines (C1 and C7), and beyond that 8va / 8vb, which is how printed music writes the top and bottom octaves. You unlock the next one by passing the current one. Notes move faster as the levels go up, and they also speed up a little within a level as you get answers right.
 
-* `npm install --save-dev babel-preset-stage-0`
-* in `brunch-config.js`, add the preset: `presets: ['es2015', 'stage-0']`
+- **Classic:** get N right; you have 3 lives, and a wrong answer or a missed note costs one.
+- **Sprint:** get N right within 60 s; each mistake costs 3 s.
+- **Survival:** like Classic, but the speed keeps rising.
+
+You earn stars for accuracy (95 % or better = ★★★, 80 % or better = ★★). If you miss a note, it lights up on the instrument. Notes you get wrong come back more often, and the level screen lists your "trouble notes".
+
+## Settings
+
+Note names (B or H), labels on the instrument, whether the octave must match, sound, sound for MIDI input, and unlock all levels. Settings and progress are saved in `localStorage`.
+
+With "octave must match" on, playing the right letter in the wrong octave shows **OK, but wrong octave**. It still counts toward the goal and costs no life, but scores half points, doesn't grow your streak, and lights up the correct key or fret.
+
+## Code
+
+```
+index.html          screens + settings dialog
+css/style.css
+js/music.js         note math, B/H naming
+js/levels.js        instruments + 30 level definitions
+js/game.js          engine (spawn, move, judge, score)
+js/staff.js         canvas staff renderer
+js/instruments.js   clickable piano + fretboard
+js/audio.js         Web Audio synth
+js/midi.js          Web MIDI input
+js/store.js         localStorage
+js/app.js           screens, input routing, HUD
+```

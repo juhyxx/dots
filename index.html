@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dots — for musical idiots</title>
+  <meta name="description" content="A browser game for learning to read musical notes on piano, guitar and bass.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <button class="brand" id="brandBtn" type="button" aria-label="Dots home">
+        <span class="logo">D<span class="o"></span>ts</span>
+        <span class="tag">for musical idiots</span>
+      </button>
+      <div class="topbar-right">
+        <button id="midiChip" class="chip" type="button">MIDI off</button>
+        <button id="settingsBtn" class="icon-btn" type="button" aria-label="Settings">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main>
+      <!-- HOME -->
+      <section id="screen-home" class="screen active">
+        <h1 class="hero">Learn to read <span>the dots</span>.</h1>
+        <p class="lead">Notes slide in from the right. Name each one before it reaches the line. Ten levels per instrument, each one a little faster.</p>
+
+        <div class="instrument-grid">
+          <button class="instrument-card" data-instrument="piano" type="button">
+            <svg viewBox="0 0 160 80" aria-hidden="true">
+              <rect x="4" y="8" width="152" height="64" rx="8" class="ivory"/>
+              <g class="seams"><path d="M23 8v64M42 8v64M61 8v64M80 8v64M99 8v64M118 8v64M137 8v64"/></g>
+              <g class="ebony"><rect x="17" y="8" width="12" height="38" rx="2"/><rect x="36" y="8" width="12" height="38" rx="2"/><rect x="74" y="8" width="12" height="38" rx="2"/><rect x="93" y="8" width="12" height="38" rx="2"/><rect x="112" y="8" width="12" height="38" rx="2"/></g>
+            </svg>
+            <div class="inst-name">Piano</div>
+            <div class="inst-desc">Grand staff, treble then bass clef. Answer on the keyboard.</div>
+            <div class="inst-stars"></div>
+          </button>
+          <button class="instrument-card" data-instrument="guitar" type="button">
+            <svg viewBox="0 0 160 80" aria-hidden="true">
+              <rect x="70" y="35" width="70" height="10" rx="2" class="wood"/>
+              <rect x="138" y="31" width="18" height="18" rx="4" class="wood dark"/>
+              <path class="body" d="M20 40c0-17 14-26 26-22 8 3 12 6 18 4 8-3 14 4 14 18s-6 21-14 18c-6-2-10 1-18 4-12 4-26-5-26-22z"/>
+              <circle cx="58" cy="40" r="7" class="hole"/>
+              <g class="strings"><path d="M34 36.5H150M34 38.5H150M34 40.5H150M34 42.5H150"/></g>
+            </svg>
+            <div class="inst-name">Guitar</div>
+            <div class="inst-desc">Treble clef. Answer on a six-string fretboard.</div>
+            <div class="inst-stars"></div>
+          </button>
+          <button class="instrument-card" data-instrument="bass" type="button">
+            <svg viewBox="0 0 160 80" aria-hidden="true">
+              <rect x="56" y="35" width="86" height="10" rx="2" class="wood"/>
+              <rect x="140" y="31" width="16" height="18" rx="4" class="wood dark"/>
+              <path class="body alt" d="M8 40c0-16 10-24 22-21 7 2 10 5 16 3 7-3 18-6 20 4 2 9 2 19 0 28-2 10-13 7-20 4-6-2-9 1-16 3-12 3-22-5-22-21z"/>
+              <rect x="22" y="34" width="10" height="12" rx="2" class="hole"/>
+              <g class="strings"><path d="M26 37H150M26 39.5H150M26 42H150M26 44.5H150"/></g>
+            </svg>
+            <div class="inst-name">Bass guitar</div>
+            <div class="inst-desc">Bass clef. Answer on a four-string fretboard.</div>
+            <div class="inst-stars"></div>
+          </button>
+        </div>
+
+        <div class="how">
+          <div><b>1 · Read</b>A note slides toward the orange line. The one with the glow is next.</div>
+          <div><b>2 · Answer</b>Type its letter (<span class="letters">C D E F G A B</span>), click your instrument, or play it on a MIDI keyboard.</div>
+          <div><b>3 · Level up</b>Pass a level to unlock the next. Every level is a little faster.</div>
+        </div>
+      </section>
+
+      <!-- LEVELS -->
+      <section id="screen-levels" class="screen">
+        <div class="levels-head">
+          <button class="btn ghost small" id="levelsBack" type="button">← Instruments</button>
+          <h2 id="levelsTitle">Piano</h2>
+          <span class="muted" id="levelsStars"></span>
+        </div>
+        <div class="level-grid" id="levelGrid"></div>
+        <div class="trouble" id="troubleBox" hidden>
+          <b>Your trouble notes</b>
+          <div class="trouble-list" id="troubleList"></div>
+        </div>
+      </section>
+
+      <!-- GAME -->
+      <section id="screen-game" class="screen">
+        <div class="hud">
+          <button class="btn ghost small" id="gameBack" type="button">← Levels</button>
+          <div class="hud-title"><span class="lvl" id="hudLevelNum">1</span><span id="hudLevelName"></span></div>
+          <div class="hud-stats">
+            <div class="stat"><span class="stat-label">Score</span><span class="stat-value" id="hudScore">0</span></div>
+            <div class="stat"><span class="stat-label">Streak</span><span class="stat-value" id="hudCombo">0</span></div>
+            <div class="stat"><span class="stat-label" id="hudLivesLabel">Lives</span><span class="stat-value lives" id="hudLives"></span></div>
+          </div>
+          <button class="icon-btn" id="pauseBtn" type="button" aria-label="Pause">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+          </button>
+        </div>
+        <div class="progress"><div class="progress-fill" id="hudProgress"></div><span id="hudGoal"></span></div>
+
+        <div class="intro" id="intro">
+          <div class="intro-meta">
+            <div class="intro-title" id="introTitle"></div>
+            <div class="intro-desc" id="introDesc"></div>
+            <div class="intro-rules" id="introRules"></div>
+            <div class="intro-keys" id="introKeys"></div>
+          </div>
+          <button class="btn big" id="startBtn" type="button">Start <kbd>Enter</kbd></button>
+        </div>
+
+        <div class="stage" id="stage"><canvas id="staff"></canvas></div>
+        <div class="input-panel" id="inputPanel"></div>
+      </section>
+    </main>
+  </div>
+
+  <div class="overlay hidden" id="overlay"><div class="overlay-card" id="overlayCard"></div></div>
+
+  <dialog id="settings">
+    <form method="dialog" class="settings" id="settingsForm">
+      <h2>Settings</h2>
+
+      <fieldset>
+        <legend>Note names</legend>
+        <label class="radio"><input type="radio" name="naming" value="B"><span><b>C D E F G A B</b><small>English</small></span></label>
+        <label class="radio"><input type="radio" name="naming" value="H"><span><b>C D E F G A H</b><small>German / Central European</small></span></label>
+      </fieldset>
+
+      <label class="field">
+        <span>Labels on the instrument</span>
+        <select name="labels">
+          <option value="none">None</option>
+          <option value="some">Landmarks (C keys, open strings)</option>
+          <option value="all">All note names</option>
+        </select>
+      </label>
+
+      <label class="check"><input type="checkbox" name="strict"><span>Octave must match<small>For clicks and MIDI. Typed letters never check the octave.</small></span></label>
+      <label class="check"><input type="checkbox" name="sound"><span>Sound</span></label>
+      <label class="check"><input type="checkbox" name="midiSound"><span>Play sound for MIDI input<small>Turn off if your keyboard makes its own sound.</small></span></label>
+
+      <div class="midi-box">
+        <div><b>MIDI keyboard</b><small id="midiStatus">Not connected</small></div>
+        <button type="button" class="btn small" id="midiConnect">Connect</button>
+      </div>
+
+      <label class="check"><input type="checkbox" name="unlockAll"><span>Unlock all levels<small>Handy for teachers or practising a specific level.</small></span></label>
+
+      <div class="settings-foot">
+        <button type="button" class="btn ghost small" id="resetBtn">Reset progress</button>
+        <button class="btn" value="close">Done</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="js/music.js"></script>
+  <script src="js/levels.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/midi.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/staff.js"></script>
+  <script src="js/instruments.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/practice.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
