@@ -2,6 +2,8 @@
 
 A browser game for learning to read sheet music. Notes slide in from the right; name each one before it reaches the orange line.
 
+Play it at **https://juhyxx.github.io/dots/**.
+
 No server and no build step. Open `index.html` in a browser, or serve the folder with any static server. The music font ([Bravura](https://github.com/steinbergmedia/bravura), SIL Open Font License) is bundled in `fonts/`, so clefs and accidentals render the same everywhere, including offline.
 
 ## Instruments
@@ -51,3 +53,7 @@ js/midi.js          Web MIDI input
 js/store.js         localStorage
 js/app.js           screens, input routing, HUD
 ```
+
+## Deployment
+
+Every push to `master` deploys to GitHub Pages via `.github/workflows/pages.yml`. The workflow copies `index.html`, `css/`, `js/` and `fonts/` as they are, with no build step. You can also run it by hand from the Actions tab.
