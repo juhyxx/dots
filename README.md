@@ -56,4 +56,4 @@ js/app.js           screens, input routing, HUD
 
 ## Deployment
 
-Every push to `master` deploys to GitHub Pages via `.github/workflows/pages.yml`. The workflow copies `index.html`, `css/`, `js/` and `fonts/` as they are, with no build step. You can also run it by hand from the Actions tab.
+Every push to `master` deploys to GitHub Pages via `.github/workflows/pages.yml`. The workflow copies `index.html`, `css/`, `js/` and `fonts/` as they are, with no build step, and force-pushes them to the `gh-pages` branch, which Pages serves. You can also run it by hand from the Actions tab.
