@@ -4,7 +4,9 @@
   font-display: block;
 }
 
+/* night (default). <html data-theme> is set by js/app.js and the inline script in index.html */
 :root {
+  color-scheme: dark;
   --bg: #12151f;
   --bg2: #1a1f2d;
   --panel: #222839;
@@ -13,12 +15,46 @@
   --muted: #9aa3b8;
   --paper: #fbf7ee;
   --accent: #ffb02e;
+  --accent-ink: var(--accent); /* accent as text, stars and big numbers */
   --accent-2: #ff7a59;
   --good: #2fc178;
   --bad: #ff5468;
+  --bad-ink: #ff9aa6;
   --info: #5aa9ff;
   --off: #434a60;
+  --glow-1: rgba(120, 90, 255, 0.18);
+  --glow-2: rgba(255, 176, 46, 0.10);
+  --shadow-lift: 0 12px 30px rgba(0, 0, 0, 0.3);
+  --shadow-stage: 0 10px 30px rgba(0, 0, 0, 0.25);
+  --shadow-pop: 0 30px 80px rgba(0, 0, 0, 0.5);
+  --scrim: rgba(8, 10, 18, 0.6);
+  --label-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
   --display: 'Fredoka', 'Nunito', system-ui, sans-serif;
+}
+
+/* daylight: the staff paper and instruments keep their colours, the chrome around them goes light */
+:root[data-theme='light'] {
+  color-scheme: light;
+  --bg: #eceef4;
+  --bg2: #f5f6fa;
+  --panel: #ffffff;
+  --line: #d5d9e3;
+  --text: #1d2130;
+  --muted: #5c6477;
+  --accent-ink: #b36b00;
+  --accent-2: #e2582f;
+  --good: #17935a;
+  --bad: #d93348;
+  --bad-ink: #c42b40;
+  --info: #2a7bd4;
+  --off: #cdd2dd;
+  --glow-1: rgba(120, 90, 255, 0.10);
+  --glow-2: rgba(255, 176, 46, 0.16);
+  --shadow-lift: 0 12px 30px rgba(30, 40, 70, 0.12);
+  --shadow-stage: 0 8px 24px rgba(30, 40, 70, 0.10);
+  --shadow-pop: 0 30px 80px rgba(30, 40, 70, 0.25);
+  --scrim: rgba(30, 35, 55, 0.35);
+  --label-shadow: none;
 }
 
 * { box-sizing: border-box; }
@@ -27,8 +63,8 @@ html, body { margin: 0; min-height: 100%; }
 
 body {
   background:
-    radial-gradient(900px 500px at 85% -10%, rgba(120, 90, 255, 0.18), transparent 60%),
-    radial-gradient(700px 400px at -10% 110%, rgba(255, 176, 46, 0.10), transparent 60%),
+    radial-gradient(900px 500px at 85% -10%, var(--glow-1), transparent 60%),
+    radial-gradient(700px 400px at -10% 110%, var(--glow-2), transparent 60%),
     var(--bg);
   color: var(--text);
   font-family: 'Nunito', system-ui, sans-serif;
@@ -122,6 +158,8 @@ body.in-game #app { height: 100vh; height: 100dvh; }
   cursor: pointer;
 }
 .icon-btn:hover { border-color: var(--accent); }
+.theme-btn .moon, :root[data-theme='light'] .theme-btn .sun { display: none; }
+:root[data-theme='light'] .theme-btn .moon { display: block; }
 
 .btn {
   border: 0;
@@ -165,7 +203,7 @@ main {
   line-height: 1.05;
   margin: 28px 0 10px;
 }
-.hero span { color: var(--accent); }
+.hero span { color: var(--accent-ink); }
 
 .lead { color: var(--muted); font-size: 18px; max-width: 580px; margin: 0; line-height: 1.5; }
 
@@ -186,9 +224,10 @@ main {
   cursor: pointer;
   transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
 }
-.instrument-card:hover { transform: translateY(-3px); border-color: var(--accent); box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3); }
+.instrument-card:hover { transform: translateY(-3px); border-color: var(--accent); box-shadow: var(--shadow-lift); }
 .instrument-card svg { display: block; width: 100%; height: 90px; }
 .instrument-card .ivory { fill: #f6f1e4; }
+:root[data-theme='light'] .instrument-card .ivory { stroke: #d6cfbd; stroke-width: 1.5; }
 .instrument-card .seams { stroke: #c9c2b0; stroke-width: 1.5; }
 .instrument-card .ebony rect { fill: #1b1d26; }
 .instrument-card .wood { fill: #8a5a33; }
@@ -200,7 +239,7 @@ main {
 
 .inst-name { font-family: var(--display); font-weight: 600; font-size: 26px; margin: 14px 0 4px; }
 .inst-desc { color: var(--muted); font-size: 15px; line-height: 1.4; }
-.inst-stars { margin-top: 14px; color: var(--accent); font-weight: 800; }
+.inst-stars { margin-top: 14px; color: var(--accent-ink); font-weight: 800; }
 
 .how {
   display: grid;
@@ -241,11 +280,11 @@ main {
 .level-card:hover { transform: translateY(-2px); border-color: var(--accent); }
 .level-card.locked { opacity: 0.45; cursor: not-allowed; }
 .level-card.locked:hover { transform: none; border-color: var(--line); }
-.level-card .num { font-family: var(--display); font-weight: 700; font-size: 36px; line-height: 1; color: var(--accent); }
+.level-card .num { font-family: var(--display); font-weight: 700; font-size: 36px; line-height: 1; color: var(--accent-ink); }
 .level-card .lname { font-weight: 800; font-size: 17px; }
 .level-card .lnotes { color: var(--muted); font-size: 14px; letter-spacing: 0.5px; }
 .level-card .lfoot { display: flex; align-items: center; justify-content: space-between; margin-top: auto; }
-.level-card .stars { color: var(--accent); font-size: 18px; letter-spacing: 2px; }
+.level-card .stars { color: var(--accent-ink); font-size: 18px; letter-spacing: 2px; }
 .level-card .best { color: var(--muted); font-size: 13px; font-weight: 700; }
 .stars .off, .big-stars .off, .lives .off { color: var(--off); }
 
@@ -270,7 +309,7 @@ main {
 
 .trouble { margin-top: 22px; padding: 16px; border-radius: 16px; background: var(--bg2); }
 .trouble-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-.trouble-chip { padding: 6px 10px; border-radius: 999px; background: rgba(255, 84, 104, 0.12); color: #ff9aa6; font-weight: 700; font-size: 14px; }
+.trouble-chip { padding: 6px 10px; border-radius: 999px; background: rgba(255, 84, 104, 0.12); color: var(--bad-ink); font-weight: 700; font-size: 14px; }
 
 /* ---------- game */
 
@@ -278,7 +317,7 @@ main {
 
 .hud { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
 .hud-title { flex: 1; min-width: 150px; font-weight: 800; font-size: 18px; }
-.hud-title .lvl { margin-right: 8px; font-family: var(--display); color: var(--accent); }
+.hud-title .lvl { margin-right: 8px; font-family: var(--display); color: var(--accent-ink); }
 .hud-stats { display: flex; gap: 20px; }
 .stat { display: flex; flex-direction: column; align-items: flex-end; min-width: 50px; }
 .stat-label { color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
@@ -295,7 +334,7 @@ main {
   font-size: 10px;
   font-weight: 800;
   color: var(--text);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  text-shadow: var(--label-shadow);
 }
 
 .intro {
@@ -322,7 +361,7 @@ main {
   border-radius: 20px;
   background: var(--paper);
   overflow: hidden;
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06), 0 10px 30px rgba(0, 0, 0, 0.25);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06), var(--shadow-stage);
 }
 .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 
@@ -423,6 +462,9 @@ main {
   box-shadow: 0 1px 1px rgba(0, 0, 0, 0.4);
 }
 .cell.wound::before { background: repeating-linear-gradient(90deg, #d8bd84 0 2px, #b39457 2px 3px); }
+/* open strings lie on the panel, not the wood: darken them so they show on a light panel */
+:root[data-theme='light'] .cell.open::before { background: #a3a8b6; }
+:root[data-theme='light'] .cell.open.wound::before { background: repeating-linear-gradient(90deg, #b39457 0 2px, #8c7140 2px 3px); }
 .cell .dot {
   position: absolute;
   left: 50%;
@@ -485,7 +527,7 @@ main {
   display: grid;
   place-items: center;
   padding: 16px;
-  background: rgba(8, 10, 18, 0.6);
+  background: var(--scrim);
   backdrop-filter: blur(4px);
 }
 .overlay.hidden { display: none; }
@@ -496,11 +538,11 @@ main {
   border: 1px solid var(--line);
   background: var(--panel);
   text-align: center;
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--shadow-pop);
 }
 .overlay-card h2 { font-family: var(--display); font-size: 30px; margin: 6px 0; }
 .overlay-card p { margin: 6px 0; line-height: 1.45; }
-.big-stars { color: var(--accent); font-size: 48px; letter-spacing: 6px; line-height: 1.1; }
+.big-stars { color: var(--accent-ink); font-size: 48px; letter-spacing: 6px; line-height: 1.1; }
 .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 18px 0 10px; }
 .result-grid div { display: flex; flex-direction: column; gap: 2px; padding: 10px; border-radius: 12px; background: var(--bg2); }
 .result-grid span { color: var(--muted); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; }
@@ -508,7 +550,7 @@ main {
 .result-grid small { color: var(--muted); font-size: 12px; }
 .result-grid small.new { color: var(--good); font-weight: 800; }
 .trouble-line { color: var(--muted); }
-.trouble-line b { color: #ff9aa6; }
+.trouble-line b { color: var(--bad-ink); }
 .overlay-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 18px; }
 
 /* ---------- settings */
@@ -521,7 +563,7 @@ dialog {
   background: var(--panel);
   color: var(--text);
 }
-dialog::backdrop { background: rgba(8, 10, 18, 0.6); backdrop-filter: blur(3px); }
+dialog::backdrop { background: var(--scrim); backdrop-filter: blur(3px); }
 .settings { display: flex; flex-direction: column; gap: 14px; padding: 24px; }
 .settings h2 { font-family: var(--display); margin: 0; }
 .settings fieldset { border: 0; padding: 0; margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }

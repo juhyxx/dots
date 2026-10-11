@@ -32,9 +32,13 @@ Guitar and bass have 10 levels each and start with the open strings. Piano has 1
 
 You earn stars for accuracy (95 % or better = ★★★, 80 % or better = ★★). If you miss a note, it lights up on the instrument. Notes you get wrong come back more often, and the level screen lists your "trouble notes".
 
+Every screen has its own address: `#/piano` is the level list, `#/piano/3` is level 3 and `#/piano/practice` is practice. So the browser's Back button works and you can bookmark a level. The address of a locked level opens the level list instead.
+
 ## Settings
 
-Note names (B or H), labels on the instrument, whether the octave must match, sound, sound for MIDI input, and unlock all levels. Settings and progress are saved in `localStorage`.
+Note names (B or H), labels on the instrument, theme, whether the octave must match, sound, sound for MIDI input, and unlock all levels. Settings and progress are saved in `localStorage`.
+
+The theme follows the system's light or dark setting until you pick one. Use the sun/moon button in the top bar to switch between daylight and night, or choose "Match the system" in Settings to go back to following the system. The staff stays on light paper in both themes.
 
 With "octave must match" on, playing the right letter in the wrong octave shows **OK, but wrong octave**. It still counts toward the goal and costs no life, but scores half points, doesn't grow your streak, and lights up the correct key or fret.
 

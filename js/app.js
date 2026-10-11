@@ -1,4 +1,4 @@
-// App controller: screens, input routing, HUD, results and settings.
+// App controller: screens and their URLs, input routing, HUD, results, settings and theme.
 (() => {
   const { Music, Audio, Midi, Store, Levels, INSTRUMENTS, Staff, PianoInput, NeckInput, Game, Practice } = Dots;
   const $ = (s) => document.querySelector(s);
@@ -89,7 +89,7 @@
         <span class="lname">${l.name}</span>
         <span class="lnotes">${notesSummary(l.pool)}</span>
         <span class="lfoot"><span class="stars">${starStr(p.stars || 0)}</span>${p.best ? `<span class="best">Best ${p.best}</span>` : ''}</span>`;
-      b.addEventListener('click', () => ok && startLevel(i));
+      b.addEventListener('click', () => ok && go(`${inst}/${i + 1}`));
       return b;
     });
     const practice = document.createElement('button');
@@ -100,7 +100,7 @@
       <span class="num">♪</span>
       <span class="lname">Practice</span>
       <span class="lnotes">Play anything and see where it is written.</span>`;
-    practice.addEventListener('click', startPractice);
+    practice.addEventListener('click', () => go(`${inst}/practice`));
     $('#levelGrid').replaceChildren(practice, ...cards);
     renderTrouble();
   }
@@ -120,6 +120,59 @@
         return e;
       })
     );
+  }
+
+  // ---------- routing
+  // Every screen has its own URL, so the browser's Back and Forward buttons move between them:
+  // home (no hash) · #/piano (levels) · #/piano/3 (level 3) · #/piano/practice.
+  // Hash URLs because GitHub Pages can't rewrite other paths to index.html.
+
+  let path = null; // route of the screen on show
+
+  const hashPath = () => location.hash.replace(/^#\/?/, '');
+  const urlFor = (p) => (p ? '#/' + p : location.pathname + location.search);
+
+  // Shows the screen for p and returns the route it settled on: an unknown or locked one falls back to its parent.
+  function render(p) {
+    const [k, sub, extra] = p.split('/').filter(Boolean);
+    if (!Object.hasOwn(INSTRUMENTS, k) || extra != null) {
+      show('home');
+      return '';
+    }
+    inst = k;
+    if (sub === 'practice') {
+      startPractice();
+      return `${k}/practice`;
+    }
+    const i = Number(sub) - 1;
+    if (Levels[k][i] && unlocked(k, i)) {
+      startLevel(i);
+      return `${k}/${i + 1}`;
+    }
+    show('levels');
+    return k;
+  }
+
+  function route() {
+    const p = hashPath();
+    if (p === path) return;
+    path = render(p);
+    if (path !== p) history.replaceState(history.state, '', urlFor(path));
+  }
+
+  // Going back up to the screen we came from steps back in history instead of adding an entry,
+  // so the in-app back buttons and the browser's Back button stay in step.
+  // replace: swap the current entry (Next level, so Back still leads to the level list).
+  function go(p, { replace = false } = {}) {
+    if (p === path) return;
+    const st = history.state || {};
+    if (!replace && st.from === p) {
+      history.back();
+      return;
+    }
+    if (replace) history.replaceState(st, '', urlFor(p));
+    else history.pushState({ from: path }, '', urlFor(p));
+    route();
   }
 
   // ---------- game
@@ -359,7 +412,7 @@
     showOverlay(`<h2>Paused</h2><p class="muted">Take a breath. The notes will wait.</p>`, [
       { label: 'Resume', run: resume },
       { label: 'Restart', run: () => startLevel(levelIdx) },
-      { label: 'Levels', run: () => show('levels') },
+      { label: 'Levels', run: () => go(inst) },
     ]);
   }
 
@@ -395,9 +448,9 @@
       </div>
       ${trouble}`;
     const actions = [];
-    if (r.win && hasNext) actions.push({ label: 'Next level', run: () => startLevel(levelIdx + 1) });
+    if (r.win && hasNext) actions.push({ label: 'Next level', run: () => go(`${inst}/${levelIdx + 2}`, { replace: true }) });
     actions.push({ label: r.win ? 'Play again' : 'Try again', run: () => startLevel(levelIdx) });
-    actions.push({ label: 'Levels', run: () => show('levels') });
+    actions.push({ label: 'Levels', run: () => go(inst) });
     showOverlay(html, actions, { midi: true });
   }
 
@@ -503,6 +556,7 @@
     const s = S();
     form.elements.naming.value = s.naming;
     form.elements.labels.value = s.labels;
+    form.elements.theme.value = s.theme;
     ['strict', 'sound', 'midiSound', 'unlockAll'].forEach((k) => (form.elements[k].checked = s[k]));
   }
 
@@ -510,12 +564,14 @@
     const s = S();
     s.naming = form.elements.naming.value;
     s.labels = form.elements.labels.value;
+    s.theme = form.elements.theme.value;
     ['strict', 'sound', 'midiSound', 'unlockAll'].forEach((k) => (s[k] = form.elements[k].checked));
     Store.save(data);
     applySettings();
   });
 
   function applySettings() {
+    applyTheme();
     Audio.setEnabled(S().sound);
     staff.naming = S().naming;
     if (screen === 'home') renderHome();
@@ -544,17 +600,33 @@
     applySettings();
   });
 
+  // ---------- theme
+
+  // the inline script in index.html applies the same rule before first paint
+  const lightQuery = matchMedia('(prefers-color-scheme: light)');
+  const theme = () => (S().theme === 'auto' ? (lightQuery.matches ? 'light' : 'dark') : S().theme);
+
+  function applyTheme() {
+    const t = theme();
+    document.documentElement.dataset.theme = t;
+    const label = t === 'dark' ? 'Switch to daylight mode' : 'Switch to night mode';
+    $('#themeBtn').setAttribute('aria-label', label);
+    $('#themeBtn').title = label;
+  }
+
+  lightQuery.addEventListener('change', () => S().theme === 'auto' && applyTheme());
+  $('#themeBtn').addEventListener('click', () => {
+    S().theme = theme() === 'dark' ? 'light' : 'dark';
+    Store.save(data);
+    applyTheme();
+  });
+
   // ---------- wiring
 
-  document.querySelectorAll('.instrument-card').forEach((c) =>
-    c.addEventListener('click', () => {
-      inst = c.dataset.instrument;
-      show('levels');
-    })
-  );
-  $('#brandBtn').addEventListener('click', () => show('home'));
-  $('#levelsBack').addEventListener('click', () => show('home'));
-  $('#gameBack').addEventListener('click', () => show('levels'));
+  document.querySelectorAll('.instrument-card').forEach((c) => c.addEventListener('click', () => go(c.dataset.instrument)));
+  $('#brandBtn').addEventListener('click', () => go(''));
+  $('#levelsBack').addEventListener('click', () => go(''));
+  $('#gameBack').addEventListener('click', () => go(inst));
   $('#pauseBtn').addEventListener('click', () => (game && game.state === 'paused' ? resume() : pause()));
   $('#startBtn').addEventListener('click', begin);
 
@@ -570,7 +642,10 @@
       .catch(() => {});
   }
 
+  window.addEventListener('popstate', route);
+
+  applyTheme();
   Audio.setEnabled(S().sound);
   if (S().midiEnabled) connectMidi();
-  renderHome();
+  route();
 })();

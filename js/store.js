@@ -16,6 +16,7 @@ Dots.Store = (() => {
         midiSound: true,
         midiEnabled: false,
         unlockAll: false,
+        theme: 'auto', // 'auto' (follow the system) | 'light' | 'dark'
       },
       progress: per(),
       stats: per(),
