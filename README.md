@@ -19,10 +19,11 @@ No server and no build step. Open `index.html` in a browser, or serve the folder
 Every instrument also accepts:
 - **Computer keyboard:** letters `C D E F G A` plus `B` or `H`, depending on the note-name setting. With solfège names, `1`–`7` stand for Do–Si (letters still work). Typed keys never check the octave.
 - **MIDI keyboard:** uses Web MIDI (Chrome or Edge). Connect it from the MIDI chip or in Settings. For guitar and bass, MIDI input is read as sounding pitch. On the start and results screens, any MIDI key works like Enter, and it doesn't make a sound there.
+- **Microphone (guitar only):** play the notes on a real guitar. Turn it on with the Mic chip on the guitar screens or in Settings. It listens only during guitar levels and practice, and lets go of the microphone everywhere else. It hears one note at a time (not chords), reads it as sounding pitch like MIDI, and works like Enter on the start and results screens. Pitch comes from the YIN algorithm. A note counts once it has held steady for about 60 ms, and the same note counts again only after a new pluck or a silence. While the game's own sounds play (the wrong-answer buzz, the countdown), the microphone ignores what it hears, so speakers don't trigger answers. A very soft note in a noisy room can go unheard, and talking near the mic can register as notes.
 
 ## Practice
 
-Each instrument has a **Practice** card at the top of its level list. It's free play: there's no score and no clock. Every note you play (on screen or on MIDI) appears on the staff right away with its name, and black keys are shown as sharps. Notes played together (within 150 ms, e.g. a chord on MIDI) are written as one chord and named: an interval for two notes ("major 3rd"), or a chord symbol for three or more: triads, sixths and sevenths (C, Am7, G/B), extended chords (9, 11, 13, add9, 6/9) and altered ones (7♭9, 7♯9, 7♯11, 7♭13, 13♭9…). Typical voicings that leave out the 5th, 9th or 11th are recognised too. Typing a letter shows that note on the staff and lights it up on the instrument.
+Each instrument has a **Practice** card at the top of its level list. It's free play: there's no score and no clock. Every note you play (on screen, on MIDI or into the microphone) appears on the staff right away with its name, and black keys are shown as sharps. Notes played together (within 150 ms, e.g. a chord on MIDI) are written as one chord and named: an interval for two notes ("major 3rd"), or a chord symbol for three or more: triads, sixths and sevenths (C, Am7, G/B), extended chords (9, 11, 13, add9, 6/9) and altered ones (7♭9, 7♯9, 7♯11, 7♭13, 13♭9…). Typical voicings that leave out the 5th, 9th or 11th are recognised too. Typing a letter shows that note on the staff and lights it up on the instrument.
 
 ## Levels
 
@@ -46,7 +47,7 @@ Speakers, Bluetooth headphones and keyboards all add some delay. Run **Calibrate
 
 ## Settings
 
-Language, note names (B, H or solfège), labels on the instrument, theme, whether the octave must match, sound, sound for MIDI input, and unlock all levels. Settings and progress are saved in `localStorage`.
+Language, note names (B, H or solfège), labels on the instrument, theme, whether the octave must match, sound, sound for MIDI input, the microphone for guitar, and unlock all levels. Settings and progress are saved in `localStorage`.
 
 The language starts as the browser's own (or English). You can pick another one by its name; "Automatic" goes back to the browser's choice. Note names follow the language until you choose them yourself: C D E F G A B for English and Chinese, H instead of B for Czech and German, and solfège (Do Re Mi…) for Spanish, French, Italian and Portuguese. The name and tagline "Dots — for musical idiots" stay in English in every language.
 
@@ -71,6 +72,7 @@ js/rhythm.js        metronome levels + engine (schedule clicks, judge taps)
 js/beats.js         canvas renderer for the metronome
 js/audio.js         Web Audio synth, metronome click, audio clock ↔ event time
 js/midi.js          Web MIDI input
+js/mic.js           microphone input: YIN pitch detection, one report per played note
 js/store.js         localStorage
 js/app.js           screens, URLs, input routing, HUD, settings
 ```

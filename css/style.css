@@ -147,6 +147,18 @@ body.in-game #app { height: 100vh; height: 100dvh; }
   text-overflow: ellipsis;
 }
 .chip.on { color: var(--good); border-color: rgba(47, 193, 120, 0.5); }
+/* microphone chip: a bar behind the text shows how loud the input is */
+.chip.mic { position: relative; isolation: isolate; }
+.chip.mic::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: rgba(47, 193, 120, 0.22);
+  transform: scaleX(var(--level, 0));
+  transform-origin: left;
+  transition: transform 80ms linear;
+}
 
 .icon-btn {
   display: grid;
@@ -652,6 +664,7 @@ dialog::backdrop { background: var(--scrim); backdrop-filter: blur(3px); }
 @media (max-width: 640px) {
   .topbar { padding: 10px 16px; }
   .tag { display: none; }
+  .chip { max-width: 120px; padding: 8px 10px; }
   .hud { gap: 8px; }
   .hud-title { order: -1; flex-basis: 100%; }
   .hud-stats { gap: 14px; margin-left: auto; }

@@ -1,6 +1,6 @@
 // App controller: screens and their URLs, input routing, HUD, results, settings, language and theme.
 (() => {
-  const { Music, Audio, Midi, Store, Levels, INSTRUMENTS, Staff, BeatView, PianoInput, NeckInput, Game, Practice, Metronome, I18n } = Dots;
+  const { Music, Audio, Midi, Mic, Store, Levels, INSTRUMENTS, Staff, BeatView, PianoInput, NeckInput, Game, Practice, Metronome, I18n } = Dots;
   const { t } = I18n;
   const $ = (s) => document.querySelector(s);
 
@@ -17,8 +17,8 @@
   let raf = 0;
   let last = 0;
   let overlayPrimary = null;
-  let overlayMidi = null;
-  let overlayMidiReadyAt = 0;
+  let overlayNote = null;
+  let overlayNoteAt = 0;
   let padTimer = 0;
   const hudCache = {};
 
@@ -51,6 +51,7 @@
     }
     if (name === 'home') renderHome();
     if (name === 'levels') renderLevels();
+    syncMic();
   }
 
   function starsFor(k) {
@@ -273,9 +274,14 @@
       .join('');
   }
 
-  function startButton(midiOn) {
+  const micOn = () => !!(inst && I().mic) && Mic.status === 'on';
+  // what else works like Enter on the start and results screens
+  const orNote = () => (Midi.status === 'connected' ? t('intro.orMidi') : micOn() ? t('intro.orPlay') : '');
+
+  function startButton() {
+    const or = orNote();
     $('#startBtn').hidden = false;
-    $('#startBtn').innerHTML = `${t('intro.start')} <kbd>Enter</kbd>${midiOn ? `<span class="or">${t('intro.orMidi')}</span>` : ''}`;
+    $('#startBtn').innerHTML = `${t('intro.start')} <kbd>Enter</kbd>${or ? `<span class="or">${or}</span>` : ''}`;
   }
 
   function renderPracticeIntro() {
@@ -287,7 +293,8 @@
     $('#introRules').textContent = t('practice.rules.' + inst);
     $('#introKeys').innerHTML = sentences(
       t(piano ? 'practice.keysPiano' : 'practice.keysNeck', { keys: kbdKeys() }),
-      Midi.status === 'connected' && t('practice.midi')
+      Midi.status === 'connected' && t('practice.midi'),
+      micOn() && t('practice.mic')
     );
   }
 
@@ -311,9 +318,10 @@
     $('#introKeys').innerHTML = sentences(
       t(I().input === 'piano' ? 'intro.typePiano' : 'intro.typeNeck', { keys: kbdKeys() }),
       midiOn && t('intro.midi'),
+      micOn() && t('intro.mic'),
       t('intro.esc', { esc: '<kbd>Esc</kbd>' })
     );
-    startButton(midiOn);
+    startButton();
   }
 
   function renderRhythmIntro() {
@@ -331,7 +339,7 @@
       $('#introRules').textContent = sentences(t('met.rules', { pct: Math.round(l.stars[0] * 100) }), l.gaps && t('met.rulesGap'), soundOff);
     }
     $('#introKeys').innerHTML = sentences(t('met.keys'), midiOn && t('met.midi'), t('intro.esc', { esc: '<kbd>Esc</kbd>' }));
-    startButton(midiOn);
+    startButton();
   }
 
   function buildInput() {
@@ -491,13 +499,15 @@
       view().draw(game);
       hud();
     }
+    if (Mic.status === 'on') micMeter(Mic.level);
     raf = requestAnimationFrame(frame);
   }
 
   // ---------- overlays
 
-  // midi: any MIDI key triggers the first action (after a short guard against stray presses)
-  function showOverlay(html, actions, { midi = false } = {}) {
+  // byNote: any MIDI key or note played into the microphone triggers the first action
+  // (after a short guard against stray presses)
+  function showOverlay(html, actions, { byNote = false } = {}) {
     const card = $('#overlayCard');
     card.innerHTML = html;
     const foot = document.createElement('div');
@@ -507,21 +517,21 @@
       b.type = 'button';
       b.className = 'btn' + (i === 0 ? '' : ' ghost');
       b.textContent = a.label;
-      if (i === 0 && midi && Midi.status === 'connected') b.insertAdjacentHTML('beforeend', `<span class="or">${t('intro.orMidi')}</span>`);
+      if (i === 0 && byNote && orNote()) b.insertAdjacentHTML('beforeend', `<span class="or">${orNote()}</span>`);
       b.addEventListener('click', a.run);
       foot.appendChild(b);
     });
     card.appendChild(foot);
     overlayPrimary = actions[0].run;
-    overlayMidi = midi ? actions[0].run : null;
-    overlayMidiReadyAt = performance.now() + 1000;
+    overlayNote = byNote ? actions[0].run : null;
+    overlayNoteAt = performance.now() + 1000;
     $('#overlay').classList.remove('hidden');
   }
 
   function hideOverlay() {
     $('#overlay').classList.add('hidden');
     overlayPrimary = null;
-    overlayMidi = null;
+    overlayNote = null;
   }
 
   function pause() {
@@ -581,7 +591,7 @@
         <div><span>${t('res.avg')}</span><b>${r.avgReaction ? decimal(r.avgReaction, 1) + ' s' : '—'}</b></div>
       </div>
       ${trouble}`;
-    showOverlay(html, resultActions(r), { midi: true });
+    showOverlay(html, resultActions(r), { byNote: true });
   }
 
   function showRhythmResults(r) {
@@ -612,7 +622,7 @@
       </div>
       <p class="result-counts">${counts}</p>
       ${tendency ? `<p>${tendency}</p>` : ''}`;
-    showOverlay(html, resultActions(r), { midi: true });
+    showOverlay(html, resultActions(r), { byNote: true });
   }
 
   function showCalibration(r) {
@@ -628,7 +638,7 @@
       r.ok
         ? [{ label: t('set.done'), run: toLevels }, { label: t('met.calAgain'), run: startCalibration }]
         : [{ label: t('res.retry'), run: startCalibration }, { label: t('btn.levels'), run: toLevels }],
-      { midi: true }
+      { byNote: true }
     );
   }
 
@@ -695,33 +705,44 @@
     answer({ idx, midi: null, label: Music.letter(idx, naming()), source: 'key' });
   });
 
-  // ---------- MIDI
+  // ---------- MIDI and microphone
 
-  Midi.onNote((m, vel, ms) => {
-    if (screen !== 'game' || !game) return;
-    // a key used like Enter (start / results screen) stays silent
+  // On the start and results screens a MIDI key or a played note works like Enter, and stays silent.
+  // Returns true if it was used that way.
+  function noteAsEnter() {
     if (game.state === 'intro') {
       begin();
-      return;
+      return true;
     }
-    if (overlayMidi) {
-      if (performance.now() >= overlayMidiReadyAt) overlayMidi();
-      return;
+    if (overlayNote) {
+      if (performance.now() >= overlayNoteAt) overlayNote();
+      return true;
     }
+    return false;
+  }
+
+  // a note played on a MIDI keyboard or a real instrument, as written pitch
+  function playedNote(written, source) {
+    if (inputUI) inputUI.press(written);
+    if (game.practice) return practiceNote(written);
+    const result = answer({ midi: written, idx: Music.idxFromMidi(written), label: Music.midiName(written, naming()), source });
+    if (result && inputUI) inputUI.markMidi(written, result);
+  }
+
+  Midi.onNote((m, vel, ms) => {
+    if (screen !== 'game' || !game || noteAsEnter()) return;
     if (game.rhythm) {
       onTap(ms || performance.now());
       return;
     }
-    const written = m - I().transpose;
     if (S().midiSound) Audio.note(m, I().timbre);
-    if (game.practice) {
-      inputUI.press(written);
-      practiceNote(written);
-      return;
-    }
-    if (inputUI) inputUI.press(written);
-    const result = answer({ midi: written, idx: Music.idxFromMidi(written), label: Music.midiName(written, naming()), source: 'midi' });
-    if (result && inputUI) inputUI.markMidi(written, result);
+    playedNote(m - I().transpose, 'midi');
+  });
+
+  // the instrument makes its own sound, so nothing is played back
+  Mic.onNote((m) => {
+    if (screen !== 'game' || !game || !I().mic || noteAsEnter()) return;
+    playedNote(m - I().transpose, 'mic');
   });
 
   let midiState = ['off', []];
@@ -751,6 +772,41 @@
     });
   }
 
+  // The microphone listens only during the levels and practice of an instrument that takes it,
+  // and only while it's turned on. Elsewhere it's let go, so the browser's recording indicator goes away.
+  function syncMic() {
+    if (S().mic && screen === 'game' && I().mic) {
+      const open = I().strings.map((n) => Music.parse(n).midi + I().transpose);
+      // sounding range: a little below the lowest open string, up to the 15th fret on the highest
+      Mic.start({ low: Math.min(...open) - 2, high: Math.max(...open) + 15 });
+    } else Mic.stop();
+    renderMic();
+  }
+
+  let micLevel = '';
+  function micMeter(v) {
+    const s = v.toFixed(2);
+    if (s !== micLevel) $('#micChip').style.setProperty('--level', (micLevel = s));
+  }
+
+  function renderMic() {
+    const st = Mic.status;
+    const trouble = st === 'denied' || st === 'no-device' || st === 'unsupported';
+    const chip = $('#micChip');
+    chip.hidden = !(inst && I().mic && (screen === 'levels' || screen === 'game'));
+    chip.classList.toggle('on', S().mic && !trouble);
+    chip.textContent = t(
+      st === 'unsupported' ? 'mic.chipNone' : !S().mic ? 'mic.chipOff' : st === 'denied' ? 'mic.chipDenied' : trouble ? 'mic.chipNone' : 'mic.chipOn'
+    );
+    if (st !== 'on') micMeter(0);
+    $('#micStatus').textContent = trouble ? t('mic.status.' + st) : t('set.micHint');
+  }
+
+  Mic.onStatus(() => {
+    renderMic();
+    if (screen === 'game') refreshIntro();
+  });
+
   // ---------- settings
 
   const dlg = $('#settings');
@@ -762,7 +818,8 @@
     form.elements.naming.value = naming();
     form.elements.labels.value = s.labels;
     form.elements.theme.value = s.theme;
-    ['strict', 'sound', 'midiSound', 'unlockAll'].forEach((k) => (form.elements[k].checked = s[k]));
+    ['strict', 'sound', 'midiSound', 'mic', 'unlockAll'].forEach((k) => (form.elements[k].checked = s[k]));
+    form.elements.mic.disabled = !Mic.supported;
   }
 
   // each control is named after its setting; only the one that changed is stored
@@ -779,6 +836,7 @@
     applyLanguage();
     applyTheme();
     Audio.setEnabled(S().sound);
+    syncMic();
     staff.naming = naming();
     Object.keys(hudCache).forEach((k) => delete hudCache[k]);
     if (screen === 'home') renderHome();
@@ -800,6 +858,13 @@
   $('#settingsBtn').addEventListener('click', openSettings);
   $('#midiConnect').addEventListener('click', connectMidi);
   $('#midiChip').addEventListener('click', () => (Midi.status === 'off' || Midi.status === 'denied' ? connectMidi() : openSettings()));
+  $('#micChip').addEventListener('click', () => {
+    S().mic = !S().mic;
+    Store.save(data);
+    syncMic();
+  });
+  // after a reload the audio clock (and so the microphone) waits for a click or a key press
+  ['pointerdown', 'keydown'].forEach((type) => document.addEventListener(type, () => Mic.status === 'on' && Audio.ensure(), true));
   $('#resetBtn').addEventListener('click', () => {
     if (!confirm(t('set.resetConfirm'))) return;
     const fresh = Store.defaults();
@@ -829,6 +894,7 @@
     $('#solfegeNames').textContent = Music.LETTERS.map((_, i) => Music.letter(i, 'S')).join(' ');
     $('#langSelect').options[0].textContent = t('set.langAuto', { name: I18n.LANGS[I18n.detect()] });
     renderMidi();
+    renderMic();
   }
 
   // ---------- theme

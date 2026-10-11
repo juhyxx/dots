@@ -15,6 +15,7 @@ Dots.Store = (() => {
         sound: true,
         midiSound: true,
         midiEnabled: false,
+        mic: false, // listen to a real guitar through the microphone
         unlockAll: false,
         theme: 'auto', // 'auto' (follow the system) | 'light' | 'dark'
         lang: 'auto', // 'auto' (browser language) or a code from Dots.I18n.LANGS

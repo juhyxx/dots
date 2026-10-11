@@ -5,6 +5,7 @@ Dots.Audio = (() => {
   let ctx = null;
   let master = null;
   let enabled = true;
+  let quietAt = 0; // performance time when every sound played so far has died away
 
   function ensure() {
     if (!ctx) {
@@ -19,6 +20,12 @@ Dots.Audio = (() => {
     }
     if (ctx.state === 'suspended') ctx.resume();
     return ctx;
+  }
+
+  // the microphone ignores what it hears until the sound that ends at audio time t has left the speakers
+  function until(t) {
+    const lag = ctx.outputLatency || ctx.baseLatency || 0;
+    quietAt = Math.max(quietAt, performance.now() + (t - ctx.currentTime + lag) * 1000);
   }
 
   function tone(f, type, gain, dur, t, filter) {
@@ -42,6 +49,7 @@ Dots.Audio = (() => {
     g.connect(master);
     o.start(t);
     o.stop(t + dur + 0.05);
+    until(t + dur);
   }
 
   function ready() {
@@ -90,6 +98,7 @@ Dots.Audio = (() => {
     g.connect(master);
     o.start(t);
     o.stop(t + 0.06);
+    until(t + 0.06);
     return () => o.stop();
   }
 
@@ -122,6 +131,10 @@ Dots.Audio = (() => {
     },
     get now() {
       return ctx ? ctx.currentTime : 0;
+    },
+    // performance time when the last sound played has died away
+    get quietAt() {
+      return quietAt;
     },
     setEnabled(v) {
       enabled = v;

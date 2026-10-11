@@ -28,6 +28,7 @@ window.Dots = window.Dots || {};
       timbre: 'guitar',
       transpose: -12,
       letterOctave: 4,
+      mic: true, // can be played into the microphone
     },
     bass: {
       name: 'Bass guitar',
