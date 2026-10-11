@@ -75,6 +75,32 @@ Dots.Audio = (() => {
     tone(final ? 1320 : 880, 'sine', 0.12, 0.15, ctx.currentTime);
   }
 
+  // Metronome click at audio time t: a short, sharp blip (1 ms attack, so its onset is t).
+  // Returns a stop() that silences it if it hasn't played yet, or null when sound is off.
+  function click(t, accent) {
+    if (!ready()) return null;
+    const o = ctx.createOscillator();
+    o.type = 'triangle';
+    o.frequency.value = accent ? 2000 : 1500;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(accent ? 0.9 : 0.55, t + 0.001);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+    o.connect(g);
+    g.connect(master);
+    o.start(t);
+    o.stop(t + 0.06);
+    return () => o.stop();
+  }
+
+  // The audio-clock time being heard at performance time ms (event.timeStamp, performance.now()).
+  // getOutputTimestamp() accounts for output latency; the fallback estimates it.
+  function heardTime(ms) {
+    const ts = ctx.getOutputTimestamp && ctx.getOutputTimestamp();
+    if (ts && ts.performanceTime > 0) return ts.contextTime + (ms - ts.performanceTime) / 1000;
+    return ctx.currentTime - (ctx.outputLatency || ctx.baseLatency || 0) + (ms - performance.now()) / 1000;
+  }
+
   function fanfare(win) {
     if (!ready()) return;
     const t = ctx.currentTime;
@@ -87,7 +113,16 @@ Dots.Audio = (() => {
     note,
     buzz,
     tick,
+    click,
+    heardTime,
     fanfare,
+    // the audio clock runs (even with sound off) once the browser lets the context start
+    get running() {
+      return !!ctx && ctx.state === 'running';
+    },
+    get now() {
+      return ctx ? ctx.currentTime : 0;
+    },
     setEnabled(v) {
       enabled = v;
     },

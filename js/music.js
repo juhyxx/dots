@@ -1,4 +1,4 @@
-// Note math: diatonic steps, MIDI numbers and note naming (B vs H system).
+// Note math: diatonic steps, MIDI numbers and note naming: B, H or solfège (Do Re Mi).
 window.Dots = window.Dots || {};
 
 Dots.Music = (() => {
@@ -6,6 +6,13 @@ Dots.Music = (() => {
   const SEMITONES = [0, 2, 4, 5, 7, 9, 11];
   const PC_TO_IDX = { 0: 0, 2: 1, 4: 2, 5: 3, 7: 4, 9: 5, 11: 6 };
   const SHARP_NAMES = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
+  // words that depend on the UI language (spelling of solfège, interval names), set through localize()
+  const words = {
+    solfege: ['Do', 'Re', 'Mi', 'Fa', 'Sol', 'La', 'Si'],
+    intervals: ['octave', 'minor 2nd', 'major 2nd', 'minor 3rd', 'major 3rd', 'perfect 4th', 'tritone',
+      'perfect 5th', 'minor 6th', 'major 6th', 'minor 7th', 'major 7th'],
+    octaves: 'octaves',
+  };
 
   // step = octave * 7 + letter index; C4 (middle C) = 28
   function fromStep(step) {
@@ -28,7 +35,9 @@ Dots.Music = (() => {
 
   const pc = (midi) => ((midi % 12) + 12) % 12;
 
+  // naming: 'B' (C D E F G A B), 'H' (… A H) or 'S' (fixed-do solfège)
   function letter(idx, naming) {
+    if (naming === 'S') return words.solfege[idx];
     return idx === 6 && naming === 'H' ? 'H' : LETTERS[idx];
   }
 
@@ -56,6 +65,10 @@ Dots.Music = (() => {
 
   function midiName(midi, naming) {
     const p = pc(midi);
+    if (naming === 'S') {
+      const i = idxFromMidi(p);
+      return i === null ? words.solfege[idxFromMidi(p - 1)] + '♯' : words.solfege[i];
+    }
     if (naming === 'H') {
       if (p === 11) return 'H';
       if (p === 10) return 'B';
@@ -90,10 +103,8 @@ Dots.Music = (() => {
     ['7♭13', [4, 10, 8, 7], [2]], ['7♭9♯5', [4, 10, 1, 8]], ['7♯9♯5', [4, 10, 3, 8]],
     ['13♭9', [4, 10, 9, 1], [7]], ['13♯9', [4, 10, 9, 3], [7]], ['13♯11', [4, 10, 9, 6], [2, 7]],
   ];
-  const INTERVALS = ['octave', 'minor 2nd', 'major 2nd', 'minor 3rd', 'major 3rd', 'perfect 4th', 'tritone',
-    'perfect 5th', 'minor 6th', 'major 6th', 'minor 7th', 'major 7th'];
-
   function rootName(p, naming) {
+    if (naming === 'S') return midiName(p, 'S');
     if (naming === 'H' && p === 10) return 'B';
     if (naming === 'H' && p === 11) return 'H';
     return ROOTS[p];
@@ -102,9 +113,9 @@ Dots.Music = (() => {
   // Name for notes played together: an interval for two notes, a chord symbol for more, or null.
   function chordName(midis, naming) {
     const sorted = [...new Set(midis)].sort((a, b) => a - b);
-    if (sorted.length === 2) return INTERVALS[(sorted[1] - sorted[0]) % 12];
+    if (sorted.length === 2) return words.intervals[(sorted[1] - sorted[0]) % 12];
     const pcs = [...new Set(sorted.map(pc))];
-    if (pcs.length === 1) return 'octaves';
+    if (pcs.length === 1) return words.octaves;
     const bass = pc(sorted[0]);
     let best = null;
     for (const r of pcs) {
@@ -120,5 +131,10 @@ Dots.Music = (() => {
     return rootName(best.r, naming) + best.suffix + (best.r === bass ? '' : '/' + rootName(bass, naming));
   }
 
-  return { LETTERS, fromStep, fromMidi, parse, range, letter, label, idxFromMidi, midiName, chordName, freq };
+  // o: { solfege: [7 names], intervals: [12 names, octave first], octaves }
+  function localize(o) {
+    Object.assign(words, o);
+  }
+
+  return { LETTERS, fromStep, fromMidi, parse, range, letter, label, idxFromMidi, midiName, chordName, freq, localize };
 })();

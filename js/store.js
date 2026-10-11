@@ -3,13 +3,13 @@ window.Dots = window.Dots || {};
 
 Dots.Store = (() => {
   const KEY = 'dots.v1';
-  const INSTRUMENTS = ['piano', 'guitar', 'bass'];
+  const INSTRUMENTS = ['piano', 'guitar', 'bass', 'metronome'];
 
   function defaults() {
     const per = () => Object.fromEntries(INSTRUMENTS.map((k) => [k, {}]));
     return {
       settings: {
-        naming: 'B',
+        naming: null, // 'B' | 'H' | 'S'; null = whatever the language uses
         labels: 'some',
         strict: true,
         sound: true,
@@ -17,6 +17,8 @@ Dots.Store = (() => {
         midiEnabled: false,
         unlockAll: false,
         theme: 'auto', // 'auto' (follow the system) | 'light' | 'dark'
+        lang: 'auto', // 'auto' (browser language) or a code from Dots.I18n.LANGS
+        latency: 0, // ms the metronome takes off every tap, measured by calibration
       },
       progress: per(),
       stats: per(),

@@ -21,8 +21,9 @@ jobs:
       # No build step: publish only the files the game needs.
       - name: Collect site files
         run: |
-          mkdir _site
+          mkdir -p _site/img
           cp -r index.html css js fonts _site/
+          cp img/*.webp _site/img/
           touch _site/.nojekyll
 
       # Replace gh-pages with a single fresh commit; Pages serves that branch.

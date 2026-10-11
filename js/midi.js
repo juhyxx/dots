@@ -1,4 +1,4 @@
-// Web MIDI input: forwards note-on messages from every connected device.
+// Web MIDI input: forwards note-on messages from every connected device, with the time they arrived.
 window.Dots = window.Dots || {};
 
 Dots.Midi = (() => {
@@ -17,7 +17,7 @@ Dots.Midi = (() => {
 
   function onMessage(e) {
     const [st, note, vel] = e.data;
-    if ((st & 0xf0) === 0x90 && vel > 0 && handler) handler(note, vel);
+    if ((st & 0xf0) === 0x90 && vel > 0 && handler) handler(note, vel, e.timeStamp);
   }
 
   function bind() {

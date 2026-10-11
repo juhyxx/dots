@@ -1,0 +1,5 @@
+# Original photos: full size, with camera and GPS metadata. The site uses the optimized img/*.webp.
+img/*.jpeg
+img/*.jpg
+img/*.HEIC
+img/*.heic

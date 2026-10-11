@@ -89,6 +89,9 @@ kbd {
   text-align: center;
 }
 
+/* until js/app.js has applied the language (see index.html) */
+.booting #app { visibility: hidden; }
+
 #app { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; }
 body.in-game #app { height: 100vh; height: 100dvh; }
 
@@ -215,7 +218,10 @@ main {
 }
 
 .instrument-card {
-  padding: 22px;
+  display: flex; /* a button centres its content otherwise, and cards in a row share one height */
+  flex-direction: column;
+  padding: 0 0 22px;
+  overflow: hidden;
   border-radius: 20px;
   border: 1px solid var(--line);
   background: var(--panel);
@@ -225,21 +231,32 @@ main {
   transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
 }
 .instrument-card:hover { transform: translateY(-3px); border-color: var(--accent); box-shadow: var(--shadow-lift); }
-.instrument-card svg { display: block; width: 100%; height: 90px; }
+/* photo across the top of the card (2:1, see img/); the metronome draws one on a panel instead */
+.inst-photo { display: block; width: 100%; height: auto; aspect-ratio: 2 / 1; object-fit: cover; background: var(--bg2); transition: transform 0.3s; }
+.instrument-card:hover .inst-photo { transform: scale(1.04); }
+.inst-art { display: grid; place-items: center; background: linear-gradient(160deg, #eadfc8, #cbb791); }
+.inst-art svg { width: 100%; height: 78%; }
 .instrument-card .ivory { fill: #f6f1e4; }
-:root[data-theme='light'] .instrument-card .ivory { stroke: #d6cfbd; stroke-width: 1.5; }
-.instrument-card .seams { stroke: #c9c2b0; stroke-width: 1.5; }
-.instrument-card .ebony rect { fill: #1b1d26; }
 .instrument-card .wood { fill: #8a5a33; }
 .instrument-card .wood.dark { fill: #5c3a20; }
 .instrument-card .body { fill: var(--accent); }
-.instrument-card .body.alt { fill: var(--accent-2); }
-.instrument-card .hole { fill: #2b2112; }
-.instrument-card .strings { stroke: #e9e4d8; stroke-width: 0.8; }
+.instrument-card .arm { stroke: #2b2112; stroke-width: 2.5; stroke-linecap: round; transform-box: view-box; transform-origin: 80px 62px; transform: rotate(10deg); }
+.instrument-card .arm rect { fill: #5c3a20; stroke: none; }
+.instrument-card:hover .arm { animation: swing 0.5s ease-in-out infinite alternate; }
 
+@keyframes swing {
+  from { transform: rotate(10deg); }
+  to { transform: rotate(-10deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .instrument-card:hover .arm { animation: none; }
+  .instrument-card:hover .inst-photo { transform: none; }
+}
+
+.inst-name, .inst-desc, .inst-stars { padding: 0 22px; }
 .inst-name { font-family: var(--display); font-weight: 600; font-size: 26px; margin: 14px 0 4px; }
 .inst-desc { color: var(--muted); font-size: 15px; line-height: 1.4; }
-.inst-stars { margin-top: 14px; color: var(--accent-ink); font-weight: 800; }
+.inst-stars { margin-top: auto; padding-top: 14px; color: var(--accent-ink); font-weight: 800; }
 
 .how {
   display: grid;
@@ -302,7 +319,10 @@ main {
 .badge.sprint { color: var(--info); }
 .badge.survival { color: var(--accent-2); }
 .badge.practice { color: var(--good); }
+.badge.tempo { color: var(--info); }
+.badge.gap { color: var(--accent-2); }
 .practice-card .num { color: var(--good); }
+#screen-game.calibrate .hud-stats,
 #screen-game.practice .hud-stats,
 #screen-game.practice .progress,
 #screen-game.practice #pauseBtn { display: none; }
@@ -364,8 +384,37 @@ main {
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06), var(--shadow-stage);
 }
 .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+#screen-game.rhythm #staff, #screen-game:not(.rhythm) #beats { display: none; }
 
 .input-panel { flex: none; padding: 12px; border-radius: 20px; background: var(--bg2); }
+
+/* metronome */
+
+.tap-pad {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  height: clamp(90px, 18vh, 160px);
+  border: 2px solid var(--line);
+  border-radius: 16px;
+  background: var(--panel);
+  color: var(--text);
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+  transition: background 0.25s, border-color 0.25s;
+}
+.tap-pad b { font-family: var(--display); font-size: 30px; font-weight: 600; }
+.tap-pad small { color: var(--muted); font-size: 13px; font-weight: 700; }
+.tap-pad.flash { transition: none; }
+.tap-pad.perfect { border-color: var(--good); background: rgba(47, 193, 120, 0.18); }
+.tap-pad.good { border-color: var(--accent); background: rgba(255, 176, 46, 0.18); }
+.tap-pad.off, .tap-pad.extra { border-color: var(--bad); background: rgba(255, 84, 104, 0.14); }
+.result-counts { color: var(--muted); font-size: 14px; font-weight: 700; }
 
 /* piano */
 
@@ -566,11 +615,13 @@ dialog {
 dialog::backdrop { background: var(--scrim); backdrop-filter: blur(3px); }
 .settings { display: flex; flex-direction: column; gap: 14px; padding: 24px; }
 .settings h2 { font-family: var(--display); margin: 0; }
-.settings fieldset { border: 0; padding: 0; margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.settings fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: 6px; }
 .settings legend { margin-bottom: 8px; font-weight: 800; }
 .settings small { display: block; color: var(--muted); font-size: 13px; font-weight: 600; }
 .radio, .check { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; }
-.radio { padding: 10px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg2); }
+.radio { padding: 8px 10px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg2); }
+.radio > span { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 10px; }
+.settings .radio small { display: inline; }
 .radio:has(input:checked) { border-color: var(--accent); }
 .radio b { letter-spacing: 1px; }
 .radio input, .check input { margin-top: 4px; accent-color: var(--accent); }
@@ -605,7 +656,6 @@ dialog::backdrop { background: var(--scrim); backdrop-filter: blur(3px); }
   .hud-title { order: -1; flex-basis: 100%; }
   .hud-stats { gap: 14px; margin-left: auto; }
   .stat-value { font-size: 18px; }
-  .settings fieldset { grid-template-columns: 1fr; }
   .cell .dot { width: 18px; height: 18px; }
 }
 

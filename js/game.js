@@ -157,9 +157,9 @@ Dots.Game = class Game {
       const pts = Math.round(((50 + 100 * (1 - n.p)) * mult) / (octave ? 2 : 1));
       this.score += pts;
       this.reactions.push(this.clock - n.born);
-      if (octave) this.fx.push({ note: n, text: 'OK, but wrong octave', color: 'accent', age: 0, life: 1.3 });
+      if (octave) this.fx.push({ note: n, text: Dots.I18n.t('fx.octave'), color: 'accent', age: 0, life: 1.3 });
       else this.fx.push({ note: n, text: '+' + pts, color: 'good', age: 0, life: 0.9 });
-      if (!octave && this.combo % 10 === 0) this.fx.push({ text: `${this.combo} in a row!`, color: 'accent', age: 0, life: 1.4 });
+      if (!octave && this.combo % 10 === 0) this.fx.push({ text: Dots.I18n.t('fx.streak', { n: this.combo }), color: 'accent', age: 0, life: 1.4 });
       this.speed = Math.min(this.level.maxSpeed, this.speed + this.level.ramp);
       this.emit('onResult', octave ? 'octave' : 'hit', n, ans);
       if (this.correct >= this.level.goal) this.end(true, 'goal');
@@ -170,7 +170,7 @@ Dots.Game = class Game {
     this.combo = 0;
     n.shake = 0.4;
     this.bad[n.id] = (this.bad[n.id] || 0) + 1;
-    this.fx.push({ note: n, text: 'not ' + ans.label, color: 'bad', age: 0, life: 0.9 });
+    this.fx.push({ note: n, text: Dots.I18n.t('fx.not', { note: ans.label }), color: 'bad', age: 0, life: 0.9 });
     this.emit('onResult', 'wrong', n, ans);
     this.penalize();
     return { result: 'wrong', note: n };
@@ -189,7 +189,7 @@ Dots.Game = class Game {
   penalize() {
     if (this.timeLeft != null) {
       this.timeLeft = Math.max(0, this.timeLeft - this.level.penalty);
-      this.fx.push({ text: `−${this.level.penalty}s`, color: 'bad', age: 0, life: 1 });
+      this.fx.push({ text: Dots.I18n.t('fx.penalty', { n: this.level.penalty }), color: 'bad', age: 0, life: 1 });
       if (this.timeLeft <= 0) this.end(false, 'time');
     } else {
       this.lives--;

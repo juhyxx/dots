@@ -470,7 +470,7 @@ window.Dots = window.Dots || {};
         ctx.font = `700 ${S * 1.2}px ${UI_FONT}`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('Play a note or a chord — it shows up here', (left + right) / 2, this.sysTop - S * 0.2);
+        ctx.fillText(Dots.I18n.t('practice.empty'), (left + right) / 2, this.sysTop - S * 0.2);
         return;
       }
 

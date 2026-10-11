@@ -1,11 +1,13 @@
-// App controller: screens and their URLs, input routing, HUD, results, settings and theme.
+// App controller: screens and their URLs, input routing, HUD, results, settings, language and theme.
 (() => {
-  const { Music, Audio, Midi, Store, Levels, INSTRUMENTS, Staff, PianoInput, NeckInput, Game, Practice } = Dots;
+  const { Music, Audio, Midi, Store, Levels, INSTRUMENTS, Staff, BeatView, PianoInput, NeckInput, Game, Practice, Metronome, I18n } = Dots;
+  const { t } = I18n;
   const $ = (s) => document.querySelector(s);
 
   const data = Store.load();
   const S = () => data.settings;
   const staff = new Staff($('#staff'));
+  const beatView = new BeatView($('#beats'));
 
   let screen = 'home';
   let inst = null;
@@ -17,18 +19,27 @@
   let overlayPrimary = null;
   let overlayMidi = null;
   let overlayMidiReadyAt = 0;
+  let padTimer = 0;
   const hudCache = {};
 
   const level = () => Levels[inst][levelIdx];
   // progress is keyed by level name, so reordering a course keeps stars on the right level
   const prog = (k, i) => data.progress[k][Levels[k][i].name] || {};
   const I = () => INSTRUMENTS[inst];
-  const letters = () => (S().naming === 'H' ? 'C D E F G A H' : 'C D E F G A B');
+  // the note names in use: the player's pick, or else what their language uses
+  const naming = () => S().naming || I18n.naming();
+  const letters = () => Music.LETTERS.map((_, i) => Music.letter(i, naming())).join(' ');
+  const lvl = (l) => I18n.level(inst, l); // translated { name, desc }
+  const view = () => (game && game.rhythm ? beatView : staff);
   const starStr = (n, max = 3) => '★'.repeat(n) + `<span class="off">${'★'.repeat(max - n)}</span>`;
+  // joins whole sentences (Chinese runs them together without a space)
+  const sentences = (...a) => a.filter(Boolean).join(t('sentenceGap'));
+  const decimal = (x, d) => x.toLocaleString(I18n.lang, { minimumFractionDigits: d, maximumFractionDigits: d });
 
   // ---------- screens
 
   function show(name) {
+    if (game && game.rhythm) game.pause(); // silences clicks already handed to the audio clock
     screen = name;
     document.querySelectorAll('.screen').forEach((s) => s.classList.toggle('active', s.id === 'screen-' + name));
     document.body.classList.toggle('in-game', name === 'game');
@@ -51,31 +62,38 @@
       const k = c.dataset.instrument;
       c.querySelector('.inst-stars').textContent = `★ ${starsFor(k)} / ${Levels[k].length * 3}`;
     });
-    document.querySelectorAll('.letters').forEach((e) => (e.textContent = letters()));
+    $('#howAnswer').innerHTML =
+      naming() === 'S'
+        ? t('how.answerTextSolfege', { keys: `1 = ${Music.letter(0, 'S')} … 7 = ${Music.letter(6, 'S')}` })
+        : t('how.answerText', { keys: `<span class="letters">${letters()}</span>` });
   }
 
   const unlocked = (k, i) => S().unlockAll || i === 0 || (prog(k, i - 1).stars || 0) > 0;
 
   function notesSummary(pool) {
     const uniq = [...new Map(pool.map((n) => [n.midi, n])).values()].sort((a, b) => a.midi - b.midi);
-    if (uniq.length <= 7) return uniq.map((n) => Music.letter(n.idx, S().naming)).join(' ');
-    return `${Music.label(uniq[0], S().naming)} – ${Music.label(uniq[uniq.length - 1], S().naming)}`;
+    if (uniq.length <= 7) return uniq.map((n) => Music.letter(n.idx, naming())).join(' ');
+    return `${Music.label(uniq[0], naming())} – ${Music.label(uniq[uniq.length - 1], naming())}`;
   }
 
   function modeLabel(l) {
-    if (l.mode === 'sprint') return `Sprint ${l.time}s`;
-    if (l.mode === 'survival') return 'Survival';
-    return 'Classic';
+    if (I().rhythm) return t('met.bpm', { bpm: l.bpm });
+    if (l.mode === 'sprint') return t('mode.sprint', { n: l.time });
+    if (l.mode === 'survival') return t('mode.survival');
+    return t('mode.classic');
   }
 
   function rulesText(l) {
-    if (l.mode === 'sprint') return `Get ${l.goal} right within ${l.time} seconds. Each mistake costs ${l.penalty}s.`;
-    if (l.mode === 'survival') return `Get ${l.goal} right with ${l.lives} lives. The notes keep speeding up.`;
-    return `Get ${l.goal} right. You have ${l.lives} lives — a wrong answer or a missed note costs one.`;
+    if (l.mode === 'sprint') return t('rules.sprint', { goal: l.goal, time: l.time, penalty: l.penalty });
+    if (l.mode === 'survival') return t('rules.survival', { goal: l.goal, lives: l.lives });
+    return t('rules.classic', { goal: l.goal, lives: l.lives });
   }
 
+  const barsText = (l) => t('met.bars', { n: l.bars }) + (l.gaps ? ' · ' + t('met.gapShort') : '');
+
   function renderLevels() {
-    $('#levelsTitle').textContent = I().name;
+    const rhythm = !!I().rhythm;
+    $('#levelsTitle').textContent = t('inst.' + inst);
     $('#levelsStars').textContent = `★ ${starsFor(inst)} / ${Levels[inst].length * 3}`;
     const cards = Levels[inst].map((l, i) => {
       const ok = unlocked(inst, i);
@@ -86,22 +104,32 @@
       b.innerHTML = `
         <span class="badge ${l.mode}">${modeLabel(l)}</span>
         <span class="num">${ok ? i + 1 : '🔒'}</span>
-        <span class="lname">${l.name}</span>
-        <span class="lnotes">${notesSummary(l.pool)}</span>
-        <span class="lfoot"><span class="stars">${starStr(p.stars || 0)}</span>${p.best ? `<span class="best">Best ${p.best}</span>` : ''}</span>`;
+        <span class="lname">${lvl(l).name}</span>
+        <span class="lnotes">${rhythm ? barsText(l) : notesSummary(l.pool)}</span>
+        <span class="lfoot"><span class="stars">${starStr(p.stars || 0)}</span>${p.best ? `<span class="best">${t('levels.best', { n: p.best })}</span>` : ''}</span>`;
       b.addEventListener('click', () => ok && go(`${inst}/${i + 1}`));
       return b;
     });
-    const practice = document.createElement('button');
-    practice.type = 'button';
-    practice.className = 'level-card practice-card';
-    practice.innerHTML = `
-      <span class="badge practice">Free play</span>
-      <span class="num">♪</span>
-      <span class="lname">Practice</span>
-      <span class="lnotes">Play anything and see where it is written.</span>`;
-    practice.addEventListener('click', () => go(`${inst}/practice`));
-    $('#levelGrid').replaceChildren(practice, ...cards);
+    // first card: free play for instruments, calibration for the metronome
+    const first = document.createElement('button');
+    first.type = 'button';
+    first.className = 'level-card practice-card';
+    if (rhythm) {
+      first.innerHTML = `
+        <span class="badge practice">${t('met.calBadge')}</span>
+        <span class="num">◎</span>
+        <span class="lname">${t('met.calName')}</span>
+        <span class="lnotes">${S().latency ? t('met.calCardSet', { ms: S().latency }) : t('met.calCard')}</span>`;
+      first.addEventListener('click', () => go(`${inst}/calibrate`));
+    } else {
+      first.innerHTML = `
+        <span class="badge practice">${t('practice.badge')}</span>
+        <span class="num">♪</span>
+        <span class="lname">${t('practice.name')}</span>
+        <span class="lnotes">${t('practice.card')}</span>`;
+      first.addEventListener('click', () => go(`${inst}/practice`));
+    }
+    $('#levelGrid').replaceChildren(first, ...cards);
     renderTrouble();
   }
 
@@ -116,7 +144,7 @@
       ...rows.map((r) => {
         const e = document.createElement('span');
         e.className = 'trouble-chip';
-        e.textContent = `${Music.label(Music.parse(r.id), S().naming)} · ${Math.round(r.rate * 100)}% wrong`;
+        e.textContent = t('levels.troubleChip', { note: Music.label(Music.parse(r.id), naming()), pct: Math.round(r.rate * 100) });
         return e;
       })
     );
@@ -124,7 +152,7 @@
 
   // ---------- routing
   // Every screen has its own URL, so the browser's Back and Forward buttons move between them:
-  // home (no hash) · #/piano (levels) · #/piano/3 (level 3) · #/piano/practice.
+  // home (no hash) · #/piano (levels) · #/piano/3 (level 3) · #/piano/practice · #/metronome/calibrate.
   // Hash URLs because GitHub Pages can't rewrite other paths to index.html.
 
   let path = null; // route of the screen on show
@@ -140,9 +168,11 @@
       return '';
     }
     inst = k;
-    if (sub === 'practice') {
-      startPractice();
-      return `${k}/practice`;
+    const rhythm = !!INSTRUMENTS[k].rhythm;
+    if (sub === (rhythm ? 'calibrate' : 'practice')) {
+      if (rhythm) startCalibration();
+      else startPractice();
+      return `${k}/${sub}`;
     }
     const i = Number(sub) - 1;
     if (Levels[k][i] && unlocked(k, i)) {
@@ -188,27 +218,42 @@
 
   function startLevel(i) {
     levelIdx = i;
-    enterGame(new Game(level(), { check, hooks }), i + 1, level().name);
+    const l = level();
+    enterGame(I().rhythm ? new Metronome(l, { latency: S().latency, hooks }) : new Game(l, { check, hooks }), i + 1);
     renderIntro();
   }
 
   function startPractice() {
-    enterGame(new Practice(), '♪', 'Practice');
+    enterGame(new Practice(), '♪');
     renderPracticeIntro();
   }
 
-  function enterGame(g, num, name) {
+  function startCalibration() {
+    enterGame(new Metronome(Metronome.CALIBRATE, { hooks }), '◎');
+    renderIntro();
+  }
+
+  const restart = () => (game.level && game.level.calibrate ? startCalibration() : startLevel(levelIdx));
+  const calibrating = () => !!(game && game.level && game.level.calibrate);
+
+  const gameName = () => (game.practice ? t('practice.name') : calibrating() ? t('met.calName') : lvl(level()).name);
+
+  function enterGame(g, num) {
     show('game');
     game = g;
-    $('#screen-game').classList.toggle('practice', !!g.practice);
-    staff.configure({ clefs: I().clefs, naming: S().naming, notes: g.practice ? [] : level().pool });
+    const el = $('#screen-game');
+    el.classList.toggle('practice', !!g.practice);
+    el.classList.toggle('rhythm', !!g.rhythm);
+    el.classList.toggle('calibrate', calibrating());
+    $('#hudLives').classList.toggle('lives', !g.rhythm);
+    if (!g.rhythm) staff.configure({ clefs: I().clefs, naming: naming(), notes: g.practice ? [] : level().pool });
     buildInput();
     Object.keys(hudCache).forEach((k) => delete hudCache[k]);
     $('#hudLevelNum').textContent = num;
-    $('#hudLevelName').textContent = name;
+    $('#hudLevelName').textContent = gameName();
     hideOverlay();
     if (document.activeElement) document.activeElement.blur();
-    staff.resize();
+    view().resize();
     last = performance.now();
     if (!raf) raf = requestAnimationFrame(frame);
   }
@@ -219,24 +264,31 @@
     else if (game.state === 'intro') renderIntro();
   }
 
-  function kbdLetters() {
+  // the keys that answer: letters, or 1–7 for solfège
+  function kbdKeys() {
+    if (naming() === 'S') return Music.LETTERS.map((_, i) => `<kbd>${i + 1}</kbd>${Music.letter(i, 'S')}`).join(' ');
     return letters()
       .split(' ')
       .map((k) => `<kbd>${k}</kbd>`)
       .join('');
   }
 
+  function startButton(midiOn) {
+    $('#startBtn').hidden = false;
+    $('#startBtn').innerHTML = `${t('intro.start')} <kbd>Enter</kbd>${midiOn ? `<span class="or">${t('intro.orMidi')}</span>` : ''}`;
+  }
+
   function renderPracticeIntro() {
     const piano = I().input === 'piano';
     $('#intro').hidden = false;
     $('#startBtn').hidden = true;
-    $('#introTitle').textContent = `Practice · ${I().name}`;
-    $('#introDesc').textContent = 'Play any note or chord and see where it is written. No score, no clock.';
-    $('#introRules').textContent = piano
-      ? 'Middle C and above go on the treble staff, lower notes on the bass staff. Black keys are shown as sharps.'
-      : `${I().name} music is written an octave higher than it sounds.`;
-    const midi = Midi.status === 'connected' ? ', play your MIDI keyboard (chords too)' : '';
-    $('#introKeys').innerHTML = `Click the ${piano ? 'keys' : 'fretboard'}${midi}, or type ${kbdLetters()} to find a note on the ${piano ? 'keyboard' : 'neck'}.`;
+    $('#introTitle').textContent = t('practice.title', { inst: t('inst.' + inst) });
+    $('#introDesc').textContent = t('practice.desc');
+    $('#introRules').textContent = t('practice.rules.' + inst);
+    $('#introKeys').innerHTML = sentences(
+      t(piano ? 'practice.keysPiano' : 'practice.keysNeck', { keys: kbdKeys() }),
+      Midi.status === 'connected' && t('practice.midi')
+    );
   }
 
   // Written MIDI pitch -> staff note on the right clef for this instrument.
@@ -249,22 +301,55 @@
   }
 
   function renderIntro() {
+    if (game.rhythm) return renderRhythmIntro();
     const l = level();
-    $('#intro').hidden = false;
-    $('#startBtn').hidden = false;
-    $('#introTitle').textContent = `Level ${levelIdx + 1} · ${l.name}`;
-    $('#introDesc').textContent = `${l.desc} Notes: ${notesSummary(l.pool)}.`;
-    $('#introRules').textContent = rulesText(l);
-    const where = I().input === 'piano' ? 'click the keys' : 'click the fretboard';
     const midiOn = Midi.status === 'connected';
-    const midi = midiOn ? ', or play your MIDI keyboard' : '';
-    $('#introKeys').innerHTML = `Type ${kbdLetters()}, ${where}${midi}. <kbd>Esc</kbd> pauses.`;
-    $('#startBtn').innerHTML = `Start <kbd>Enter</kbd>${midiOn ? '<span class="or">or any MIDI key</span>' : ''}`;
+    $('#intro').hidden = false;
+    $('#introTitle').textContent = t('intro.level', { n: levelIdx + 1, name: lvl(l).name });
+    $('#introDesc').textContent = sentences(lvl(l).desc, t('intro.notes', { notes: notesSummary(l.pool) }));
+    $('#introRules').textContent = rulesText(l);
+    $('#introKeys').innerHTML = sentences(
+      t(I().input === 'piano' ? 'intro.typePiano' : 'intro.typeNeck', { keys: kbdKeys() }),
+      midiOn && t('intro.midi'),
+      t('intro.esc', { esc: '<kbd>Esc</kbd>' })
+    );
+    startButton(midiOn);
+  }
+
+  function renderRhythmIntro() {
+    const l = game.level;
+    const midiOn = Midi.status === 'connected';
+    const soundOff = !S().sound && t('met.soundOff');
+    $('#intro').hidden = false;
+    if (l.calibrate) {
+      $('#introTitle').textContent = t('met.calName');
+      $('#introDesc').textContent = t('met.calDesc');
+      $('#introRules').textContent = sentences(S().latency ? t('met.calNow', { ms: S().latency }) : t('met.calNone'), soundOff);
+    } else {
+      $('#introTitle').textContent = t('intro.level', { n: levelIdx + 1, name: lvl(l).name });
+      $('#introDesc').textContent = sentences(lvl(l).desc, t('met.tempo', { bpm: l.bpm, bars: t('met.bars', { n: l.bars }) }));
+      $('#introRules').textContent = sentences(t('met.rules', { pct: Math.round(l.stars[0] * 100) }), l.gaps && t('met.rulesGap'), soundOff);
+    }
+    $('#introKeys').innerHTML = sentences(t('met.keys'), midiOn && t('met.midi'), t('intro.esc', { esc: '<kbd>Esc</kbd>' }));
+    startButton(midiOn);
   }
 
   function buildInput() {
     const panel = $('#inputPanel');
-    const common = { labels: S().labels, naming: S().naming, onPress: onInstrumentPress };
+    if (game.rhythm) {
+      const pad = document.createElement('button');
+      pad.type = 'button';
+      pad.className = 'tap-pad';
+      pad.innerHTML = `<b>${t('met.tap')}</b><small>${t('met.tapHint')}</small>`;
+      pad.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        onTap(e.timeStamp);
+      });
+      panel.replaceChildren(pad);
+      inputUI = null;
+      return;
+    }
+    const common = { labels: S().labels, naming: naming(), onPress: onInstrumentPress };
     if (I().input === 'piano') {
       const mids = game.practice ? I().practiceRange.map((n) => Music.parse(n).midi) : level().pool.map((n) => n.midi);
       const low = Math.floor(Math.min(...mids) / 12) * 12;
@@ -287,7 +372,7 @@
     if (!game || game.state !== 'intro') return;
     Audio.ensure();
     $('#intro').hidden = true;
-    staff.resize();
+    view().resize();
     game.begin();
   }
 
@@ -303,8 +388,20 @@
   function onInstrumentPress(midi, el) {
     Audio.note(midi + I().transpose, I().timbre);
     if (game && game.practice) return practiceNote(midi);
-    const result = answer({ midi, idx: Music.idxFromMidi(midi), label: Music.midiName(midi, S().naming), source: 'mouse' });
+    const result = answer({ midi, idx: Music.idxFromMidi(midi), label: Music.midiName(midi, naming()), source: 'mouse' });
     if (result) inputUI.mark(el, result);
+  }
+
+  // metronome tap from any source; ms is the event's timeStamp
+  function onTap(ms) {
+    if (!game || !game.rhythm) return;
+    if (game.state === 'intro') return begin();
+    const grade = game.tap(ms);
+    const pad = $('.tap-pad');
+    if (!grade || !pad) return;
+    clearTimeout(padTimer);
+    pad.className = 'tap-pad flash ' + grade;
+    padTimer = setTimeout(() => (pad.className = 'tap-pad'), 90);
   }
 
   function recordStat(note, ok) {
@@ -327,6 +424,16 @@
       }
     },
     onEnd(result) {
+      const ended = game;
+      if (result.calibrate) {
+        if (result.ok) {
+          S().latency = result.latency;
+          Store.save(data);
+        }
+        Audio.fanfare(result.ok);
+        setTimeout(() => game === ended && showCalibration(result), 650);
+        return;
+      }
       const p = { stars: 0, best: 0, ...prog(inst, levelIdx) };
       const wasLocked = levelIdx + 1 < Levels[inst].length && !unlocked(inst, levelIdx + 1);
       p.best = Math.max(p.best || 0, result.score);
@@ -336,7 +443,6 @@
       result.newBest = result.score === p.best && result.score > 0;
       result.unlockedNext = wasLocked && unlocked(inst, levelIdx + 1);
       Audio.fanfare(result.win);
-      const ended = game;
       setTimeout(() => game === ended && showResults(result), 650);
     },
   };
@@ -348,30 +454,41 @@
     else $(sel).textContent = val;
   }
 
+  function progress(done, goal) {
+    setText('#hudGoal', `${done} / ${goal}`);
+    const pct = `${Math.min(100, (done / goal) * 100)}%`;
+    if (hudCache.pct !== pct) $('#hudProgress').style.width = hudCache.pct = pct;
+  }
+
   function hud() {
     const g = game;
     if (g.practice) return;
     setText('#hudScore', g.score);
     setText('#hudCombo', g.combo);
+    if (g.rhythm) {
+      const st = g.stats();
+      setText('#hudLivesLabel', t('hud.timing'));
+      setText('#hudLives', st.n ? `±${Math.round(st.meanAbs)} ms` : '—');
+      progress(g.done, g.beats.length);
+      return;
+    }
     if (g.timeLeft != null) {
-      setText('#hudLivesLabel', 'Time');
+      setText('#hudLivesLabel', t('hud.time'));
       setText('#hudLives', `${Math.ceil(g.timeLeft)}s`);
     } else {
-      setText('#hudLivesLabel', 'Lives');
+      setText('#hudLivesLabel', t('hud.lives'));
       const lost = g.level.lives - Math.max(0, g.lives);
       setText('#hudLives', '♥'.repeat(Math.max(0, g.lives)) + `<span class="off">${'♥'.repeat(lost)}</span>`, true);
     }
-    setText('#hudGoal', `${g.correct} / ${g.level.goal}`);
-    const pct = `${Math.min(100, (g.correct / g.level.goal) * 100)}%`;
-    if (hudCache.pct !== pct) $('#hudProgress').style.width = hudCache.pct = pct;
+    progress(g.correct, g.level.goal);
   }
 
-  function frame(t) {
-    const dt = Math.min(0.05, Math.max(0, (t - last) / 1000));
-    last = t;
+  function frame(now) {
+    const dt = Math.min(0.05, Math.max(0, (now - last) / 1000));
+    last = now;
     if (game) {
       game.update(dt);
-      staff.draw(game);
+      view().draw(game);
       hud();
     }
     raf = requestAnimationFrame(frame);
@@ -390,7 +507,7 @@
       b.type = 'button';
       b.className = 'btn' + (i === 0 ? '' : ' ghost');
       b.textContent = a.label;
-      if (i === 0 && midi && Midi.status === 'connected') b.insertAdjacentHTML('beforeend', '<span class="or">or any MIDI key</span>');
+      if (i === 0 && midi && Midi.status === 'connected') b.insertAdjacentHTML('beforeend', `<span class="or">${t('intro.orMidi')}</span>`);
       b.addEventListener('click', a.run);
       foot.appendChild(b);
     });
@@ -409,10 +526,14 @@
 
   function pause() {
     if (!game || !game.pause()) return;
-    showOverlay(`<h2>Paused</h2><p class="muted">Take a breath. The notes will wait.</p>`, [
-      { label: 'Resume', run: resume },
-      { label: 'Restart', run: () => startLevel(levelIdx) },
-      { label: 'Levels', run: () => go(inst) },
+    showPause();
+  }
+
+  function showPause() {
+    showOverlay(`<h2>${t('pause.title')}</h2><p class="muted">${t(game.rhythm ? 'pause.textRhythm' : 'pause.text')}</p>`, [
+      { label: t('pause.resume'), run: resume },
+      { label: t('pause.restart'), run: restart },
+      { label: t('btn.levels'), run: () => go(inst) },
     ]);
   }
 
@@ -424,43 +545,101 @@
     }
   }
 
+  // the buttons under a level's results
+  function resultActions(r) {
+    const actions = [];
+    if (r.win && levelIdx + 1 < Levels[inst].length) actions.push({ label: t('res.next'), run: () => go(`${inst}/${levelIdx + 2}`, { replace: true }) });
+    actions.push({ label: r.win ? t('res.again') : t('res.retry'), run: restart });
+    actions.push({ label: t('btn.levels'), run: () => go(inst) });
+    return actions;
+  }
+
+  function resultSub(r) {
+    if (r.win && r.unlockedNext) return t('res.unlocked', { n: levelIdx + 2 });
+    if (r.win && levelIdx + 1 >= Levels[inst].length) return t('res.allDone');
+    return '';
+  }
+
   function showResults(r) {
     if (screen !== 'game') return;
-    const hasNext = levelIdx + 1 < Levels[inst].length;
-    const titles = { goal: r.stars === 3 ? 'Flawless!' : 'Level complete!', lives: 'Out of lives', time: "Time's up" };
-    let sub = '';
-    if (!r.win && r.reason === 'time') sub = `You got ${r.correct} of ${level().goal}. Answer faster to beat the clock.`;
-    else if (!r.win) sub = 'Missed notes light up on the instrument — watch for them and try again.';
-    else if (r.unlockedNext) sub = `Level ${levelIdx + 2} unlocked.`;
-    else if (!hasNext) sub = `That's every ${I().name.toLowerCase()} level. Respect.`;
+    if (r.rhythm) return showRhythmResults(r);
+    const titles = { goal: r.stars === 3 ? t('res.flawless') : t('res.complete'), lives: t('res.lives'), time: t('res.time') };
+    let sub = resultSub(r);
+    if (!r.win && r.reason === 'time') sub = t('res.timeSub', { correct: r.correct, goal: level().goal });
+    else if (!r.win) sub = t('res.livesSub');
     const trouble = r.trouble.length
-      ? `<p class="trouble-line">Watch out for: ${r.trouble.map((id) => `<b>${Music.label(Music.parse(id), S().naming)}</b>`).join(', ')}</p>`
+      ? `<p class="trouble-line">${t('res.watch', { notes: r.trouble.map((id) => `<b>${Music.label(Music.parse(id), naming())}</b>`).join(', ') })}</p>`
       : '';
     const html = `
       <div class="big-stars">${starStr(r.stars)}</div>
       <h2>${titles[r.reason]}</h2>
       ${sub ? `<p class="muted">${sub}</p>` : ''}
       <div class="result-grid">
-        <div><span>Score</span><b>${r.score}</b>${r.bonus ? `<small>incl. +${r.bonus} bonus</small>` : ''}${r.newBest ? '<small class="new">New best!</small>' : ''}</div>
-        <div><span>Accuracy</span><b>${Math.round(r.accuracy * 100)}%</b></div>
-        <div><span>Best streak</span><b>${r.maxCombo}</b></div>
-        <div><span>Avg. per note</span><b>${r.avgReaction ? r.avgReaction.toFixed(1) + 's' : '—'}</b></div>
+        <div><span>${t('res.score')}</span><b>${r.score}</b>${r.bonus ? `<small>${t('res.bonus', { n: r.bonus })}</small>` : ''}${r.newBest ? `<small class="new">${t('res.best')}</small>` : ''}</div>
+        <div><span>${t('res.accuracy')}</span><b>${Math.round(r.accuracy * 100)}%</b></div>
+        <div><span>${t('res.streak')}</span><b>${r.maxCombo}</b></div>
+        <div><span>${t('res.avg')}</span><b>${r.avgReaction ? decimal(r.avgReaction, 1) + ' s' : '—'}</b></div>
       </div>
       ${trouble}`;
-    const actions = [];
-    if (r.win && hasNext) actions.push({ label: 'Next level', run: () => go(`${inst}/${levelIdx + 2}`, { replace: true }) });
-    actions.push({ label: r.win ? 'Play again' : 'Try again', run: () => startLevel(levelIdx) });
-    actions.push({ label: 'Levels', run: () => go(inst) });
-    showOverlay(html, actions, { midi: true });
+    showOverlay(html, resultActions(r), { midi: true });
+  }
+
+  function showRhythmResults(r) {
+    const l = game.level;
+    const sub = r.win ? resultSub(r) : t('met.resFailSub', { pct: Math.round(l.stars[0] * 100) });
+    const mean = Math.round(r.mean);
+    let tendency = '';
+    if (r.taps >= 4) tendency = Math.abs(mean) < 20 ? t('met.steady') : mean > 0 ? t('met.drag', { ms: mean }) : t('met.rush', { ms: -mean });
+    const c = r.counts;
+    const counts = [
+      [t('met.perfect'), c.perfect],
+      [t('met.good'), c.good],
+      [t('met.offBeat'), c.off],
+      [t('met.missed'), c.miss],
+      ...(r.extra ? [[t('met.extras'), r.extra]] : []),
+    ]
+      .map(([k, v]) => `${k} <b>${v}</b>`)
+      .join(' · ');
+    const html = `
+      <div class="big-stars">${starStr(r.stars)}</div>
+      <h2>${r.win ? (r.stars === 3 ? t('res.flawless') : t('res.complete')) : t('met.resFail')}</h2>
+      ${sub ? `<p class="muted">${sub}</p>` : ''}
+      <div class="result-grid">
+        <div><span>${t('res.score')}</span><b>${r.score}</b>${r.newBest ? `<small class="new">${t('res.best')}</small>` : ''}</div>
+        <div><span>${t('res.accuracy')}</span><b>${Math.round(r.accuracy * 100)}%</b></div>
+        <div><span>${t('met.resAverage')}</span><b>${r.taps ? BeatView.signed(r.mean) + ' ms' : '—'}</b><small>${t('met.signHint')}</small></div>
+        <div><span>${t('met.resSpread')}</span><b>${r.taps > 1 ? '±' + Math.round(r.spread) + ' ms' : '—'}</b><small>${t('met.spreadHint')}</small></div>
+      </div>
+      <p class="result-counts">${counts}</p>
+      ${tendency ? `<p>${tendency}</p>` : ''}`;
+    showOverlay(html, resultActions(r), { midi: true });
+  }
+
+  function showCalibration(r) {
+    if (screen !== 'game') return;
+    let text;
+    if (!r.ok) text = t('met.calFailSub', { n: r.taps });
+    else if (Math.abs(r.latency) < 5) text = t('met.calZero');
+    else text = r.latency > 0 ? t('met.calLate', { ms: r.latency }) : t('met.calEarly', { ms: -r.latency });
+    const html = `<h2>${r.ok ? t('met.calDone') : t('met.calFail')}</h2><p class="muted">${text}</p>`;
+    const toLevels = () => go(inst);
+    showOverlay(
+      html,
+      r.ok
+        ? [{ label: t('set.done'), run: toLevels }, { label: t('met.calAgain'), run: startCalibration }]
+        : [{ label: t('res.retry'), run: startCalibration }, { label: t('btn.levels'), run: toLevels }],
+      { midi: true }
+    );
   }
 
   // ---------- keyboard
 
   function keyToIdx(key) {
     const k = key.toUpperCase();
+    if (naming() === 'S' && /^[1-7]$/.test(k)) return Number(k) - 1;
     const i = 'CDEFGA'.indexOf(k);
     if (k.length === 1 && i >= 0) return i;
-    if (k === (S().naming === 'H' ? 'H' : 'B')) return 6;
+    if (k === (naming() === 'H' ? 'H' : 'B')) return 6;
     return null;
   }
 
@@ -479,10 +658,27 @@
       inputUI.hint(midi);
       return;
     }
-    if (k === 'Enter') {
+    if (k === 'Enter' && (game.state === 'intro' || overlayPrimary)) {
       e.preventDefault();
       if (game.state === 'intro') begin();
-      else if (overlayPrimary) overlayPrimary();
+      else overlayPrimary();
+      return;
+    }
+    if (game.rhythm) {
+      if (k === 'Escape') {
+        e.preventDefault();
+        if (game.state === 'paused') resume();
+        else pause();
+        return;
+      }
+      // any character key (Space included) or Enter is a tap
+      if (e.repeat || (k.length !== 1 && k !== 'Enter')) return;
+      e.preventDefault();
+      onTap(e.timeStamp);
+      return;
+    }
+    if (k === 'Enter') {
+      e.preventDefault();
       return;
     }
     if (k === 'Escape' || k === ' ') {
@@ -496,14 +692,13 @@
     const idx = keyToIdx(k);
     if (idx === null) return;
     e.preventDefault();
-    answer({ idx, midi: null, label: Music.letter(idx, S().naming), source: 'key' });
+    answer({ idx, midi: null, label: Music.letter(idx, naming()), source: 'key' });
   });
 
   // ---------- MIDI
 
-  Midi.onNote((m) => {
+  Midi.onNote((m, vel, ms) => {
     if (screen !== 'game' || !game) return;
-    const written = m - I().transpose;
     // a key used like Enter (start / results screen) stays silent
     if (game.state === 'intro') {
       begin();
@@ -513,6 +708,11 @@
       if (performance.now() >= overlayMidiReadyAt) overlayMidi();
       return;
     }
+    if (game.rhythm) {
+      onTap(ms || performance.now());
+      return;
+    }
+    const written = m - I().transpose;
     if (S().midiSound) Audio.note(m, I().timbre);
     if (game.practice) {
       inputUI.press(written);
@@ -520,23 +720,27 @@
       return;
     }
     if (inputUI) inputUI.press(written);
-    const result = answer({ midi: written, idx: Music.idxFromMidi(written), label: Music.midiName(written, S().naming), source: 'midi' });
+    const result = answer({ midi: written, idx: Music.idxFromMidi(written), label: Music.midiName(written, naming()), source: 'midi' });
     if (result && inputUI) inputUI.markMidi(written, result);
   });
 
-  const MIDI_TEXT = {
-    unsupported: "This browser doesn't support Web MIDI — try Chrome or Edge.",
-    off: 'Not connected',
-    denied: 'Access was denied. Allow MIDI for this page in your browser settings.',
-    'no-device': 'Allowed, but no device found. Plug one in.',
-  };
+  let midiState = ['off', []];
 
-  Midi.onStatus((status, names) => {
+  function renderMidi() {
+    const [status, names] = midiState;
     const chip = $('#midiChip');
     chip.classList.toggle('on', status === 'connected');
-    chip.textContent = status === 'connected' ? `MIDI · ${names[0]}${names.length > 1 ? ` +${names.length - 1}` : ''}` : status === 'unsupported' ? 'No MIDI' : 'MIDI off';
-    $('#midiStatus').textContent = status === 'connected' ? `Connected: ${names.join(', ')}` : MIDI_TEXT[status];
+    chip.textContent =
+      status === 'connected'
+        ? `MIDI · ${names[0]}${names.length > 1 ? ` +${names.length - 1}` : ''}`
+        : t(status === 'unsupported' ? 'midi.chipNone' : 'midi.chipOff');
+    $('#midiStatus').textContent = status === 'connected' ? t('midi.connected', { names: names.join(', ') }) : t('midi.status.' + status);
     $('#midiConnect').hidden = status === 'connected' || status === 'unsupported';
+  }
+
+  Midi.onStatus((status, names) => {
+    midiState = [status, names];
+    renderMidi();
     if (screen === 'game') refreshIntro();
   });
 
@@ -554,36 +758,41 @@
 
   function fillSettings() {
     const s = S();
-    form.elements.naming.value = s.naming;
+    form.elements.lang.value = Object.hasOwn(I18n.LANGS, s.lang) ? s.lang : 'auto';
+    form.elements.naming.value = naming();
     form.elements.labels.value = s.labels;
     form.elements.theme.value = s.theme;
     ['strict', 'sound', 'midiSound', 'unlockAll'].forEach((k) => (form.elements[k].checked = s[k]));
   }
 
-  form.addEventListener('change', () => {
-    const s = S();
-    s.naming = form.elements.naming.value;
-    s.labels = form.elements.labels.value;
-    s.theme = form.elements.theme.value;
-    ['strict', 'sound', 'midiSound', 'unlockAll'].forEach((k) => (s[k] = form.elements[k].checked));
+  // each control is named after its setting; only the one that changed is stored
+  form.addEventListener('change', (e) => {
+    const el = e.target;
+    if (!el.name) return;
+    S()[el.name] = el.type === 'checkbox' ? el.checked : el.value;
     Store.save(data);
     applySettings();
+    fillSettings();
   });
 
   function applySettings() {
+    applyLanguage();
     applyTheme();
     Audio.setEnabled(S().sound);
-    staff.naming = S().naming;
+    staff.naming = naming();
+    Object.keys(hudCache).forEach((k) => delete hudCache[k]);
     if (screen === 'home') renderHome();
     if (screen === 'levels') renderLevels();
     if (screen === 'game' && game) {
+      $('#hudLevelName').textContent = gameName();
       buildInput();
       refreshIntro();
+      if (game.state === 'paused') showPause();
     }
   }
 
   function openSettings() {
-    if (game && game.state === 'playing') pause();
+    if (game && (game.state === 'playing' || game.state === 'countin')) pause();
     fillSettings();
     dlg.showModal();
   }
@@ -592,13 +801,35 @@
   $('#midiConnect').addEventListener('click', connectMidi);
   $('#midiChip').addEventListener('click', () => (Midi.status === 'off' || Midi.status === 'denied' ? connectMidi() : openSettings()));
   $('#resetBtn').addEventListener('click', () => {
-    if (!confirm('Reset all stars, best scores and note stats?')) return;
+    if (!confirm(t('set.resetConfirm'))) return;
     const fresh = Store.defaults();
     data.progress = fresh.progress;
     data.stats = fresh.stats;
     Store.save(data);
     applySettings();
   });
+
+  // ---------- language
+
+  // every language under its own name; "Automatic" names the one it picked
+  $('#langSelect').append(
+    new Option('', 'auto'),
+    ...Object.entries(I18n.LANGS).map(([code, name]) => {
+      const o = new Option(name, code);
+      o.lang = code;
+      return o;
+    })
+  );
+
+  function applyLanguage() {
+    I18n.use(S().lang);
+    Music.localize({ solfege: t('music.solfege').split(' '), intervals: t('music.intervals').split('|'), octaves: t('music.octaves') });
+    I18n.apply();
+    $('meta[name="description"]').content = t('meta.desc');
+    $('#solfegeNames').textContent = Music.LETTERS.map((_, i) => Music.letter(i, 'S')).join(' ');
+    $('#langSelect').options[0].textContent = t('set.langAuto', { name: I18n.LANGS[I18n.detect()] });
+    renderMidi();
+  }
 
   // ---------- theme
 
@@ -607,9 +838,8 @@
   const theme = () => (S().theme === 'auto' ? (lightQuery.matches ? 'light' : 'dark') : S().theme);
 
   function applyTheme() {
-    const t = theme();
-    document.documentElement.dataset.theme = t;
-    const label = t === 'dark' ? 'Switch to daylight mode' : 'Switch to night mode';
+    const label = t(theme() === 'dark' ? 'top.toDay' : 'top.toNight');
+    document.documentElement.dataset.theme = theme();
     $('#themeBtn').setAttribute('aria-label', label);
     $('#themeBtn').title = label;
   }
@@ -630,7 +860,10 @@
   $('#pauseBtn').addEventListener('click', () => (game && game.state === 'paused' ? resume() : pause()));
   $('#startBtn').addEventListener('click', begin);
 
-  new ResizeObserver(() => staff.resize()).observe($('#stage'));
+  new ResizeObserver(() => {
+    staff.resize();
+    beatView.resize();
+  }).observe($('#stage'));
   document.addEventListener('visibilitychange', () => document.hidden && pause());
   if (document.fonts) {
     document.fonts
@@ -644,8 +877,10 @@
 
   window.addEventListener('popstate', route);
 
+  applyLanguage();
   applyTheme();
   Audio.setEnabled(S().sound);
   if (S().midiEnabled) connectMidi();
   route();
+  document.documentElement.classList.remove('booting');
 })();
