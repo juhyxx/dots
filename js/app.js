@@ -906,6 +906,8 @@
   function applyTheme() {
     const label = t(theme() === 'dark' ? 'top.toDay' : 'top.toNight');
     document.documentElement.dataset.theme = theme();
+    // the browser bar (and the installed app's title bar) takes the page background
+    $('meta[name="theme-color"]').content = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
     $('#themeBtn').setAttribute('aria-label', label);
     $('#themeBtn').title = label;
   }
@@ -949,4 +951,9 @@
   if (S().midiEnabled) connectMidi();
   route();
   document.documentElement.classList.remove('booting');
+
+  // offline play and "install as app" (sw.js); needs https or localhost
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  }
 })();

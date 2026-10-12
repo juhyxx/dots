@@ -6,7 +6,9 @@ The game speaks English, Czech, German, Spanish, French, Italian, Brazilian Port
 
 Play it at **https://juhyxx.github.io/dots/**.
 
-No server and no build step. Open `index.html` in a browser, or serve the folder with any static server. The music font ([Bravura](https://github.com/steinbergmedia/bravura), SIL Open Font License) is bundled in `fonts/`, so clefs and accidentals render the same everywhere, including offline.
+You can install it as an app (Add to Home Screen on phones, the install button in Chrome's or Edge's address bar on desktop). After the first visit it also works offline.
+
+No server and no build step. Open `index.html` in a browser, or serve the folder with any static server (installing and offline play need a server, not `file://`). The music font ([Bravura](https://github.com/steinbergmedia/bravura), SIL Open Font License) is bundled in `fonts/`, so clefs and accidentals render the same everywhere, including offline.
 
 ## Instruments
 
@@ -59,6 +61,9 @@ With "octave must match" on, playing the right letter in the wrong octave shows 
 
 ```
 index.html          screens + settings dialog
+sw.js               service worker: offline play, picks up new deploys
+manifest.webmanifest  app name, colours and icons for installing
+icons/              app icons (PNG + SVG favicon)
 css/style.css
 img/*.webp          instrument photos for the home cards (800×400 + 400×200)
 js/i18n.js          language detection, string lookup (with plurals), data-i18n attributes
@@ -77,10 +82,18 @@ js/store.js         localStorage
 js/app.js           screens, URLs, input routing, HUD, settings
 ```
 
-To add a language: copy `js/lang/en.js`, translate the strings (keep `{placeholders}` and markup), add the level names and descriptions as the other language files do, add a `<script>` tag in `index.html`, and list the language in `LANGS` and `NAMING` in `js/i18n.js`.
+To add a language: copy `js/lang/en.js`, translate the strings (keep `{placeholders}` and markup), add the level names and descriptions as the other language files do, add a `<script>` tag in `index.html` and the file to `FILES` in `sw.js`, and list the language in `LANGS` and `NAMING` in `js/i18n.js`.
 
 The card photos are 2:1 crops of the originals, saved as WebP at 800×400 and 400×200 with no metadata. `srcset` lets each screen load only the size it needs. The originals stay out of git (`.gitignore`), because they're full size and carry camera and GPS data.
 
 ## Deployment
 
-Every push to `master` deploys to GitHub Pages via `.github/workflows/pages.yml`. The workflow copies `index.html`, `css/`, `js/`, `fonts/` and the `img/*.webp` photos as they are, with no build step, and force-pushes them to the `gh-pages` branch, which Pages serves. You can also run it by hand from the Actions tab.
+Every push to `master` deploys to GitHub Pages via `.github/workflows/pages.yml`. The workflow copies `index.html`, `sw.js`, `manifest.webmanifest`, `css/`, `js/`, `fonts/`, `icons/` and the `img/*.webp` photos and force-pushes them to the `gh-pages` branch, which Pages serves. You can also run it by hand from the Actions tab.
+
+The only change on the way is the version stamp. Each deploy's version is its short commit hash. It's added to every CSS, JS, image and font URL as `?v=<hash>` (in `index.html`, `css/style.css` and `sw.js`) and becomes `VERSION` in `sw.js`. So browsers never mix a new page with old scripts from their cache:
+
+- The service worker loads the page itself from the network first (and serves it from its cache only offline), so a new deploy shows up the next time the game is opened.
+- Every new deploy changes `sw.js`, so the browser installs the new worker. It downloads that version's files into a fresh cache and deletes the old one.
+- Locally, `sw.js` keeps `VERSION = 'dev'`. Then it loads everything from the network first, so your edits show up on reload; the cache is only for offline.
+
+Before stamping, the workflow checks that `FILES` in `sw.js` lists every local file `index.html` and `css/style.css` load, and only files that exist. Otherwise the deploy fails.

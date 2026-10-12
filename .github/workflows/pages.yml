@@ -22,9 +22,34 @@ jobs:
       - name: Collect site files
         run: |
           mkdir -p _site/img
-          cp -r index.html css js fonts _site/
+          cp -r index.html sw.js manifest.webmanifest css js fonts icons _site/
           cp img/*.webp _site/img/
           touch _site/.nojekyll
+
+      # The service worker caches the files it lists, for offline play. A file it misses
+      # won't work offline; a listed file that doesn't exist stops it from installing at all.
+      - name: Check the service worker's file list
+        working-directory: _site
+        run: |
+          ok=1
+          for f in $(grep -ohE '(css|js|img|fonts|icons)/[A-Za-z0-9._/-]+\.[a-z0-9]+' index.html css/style.css | sort -u); do
+            grep -q "'$f'" sw.js || { echo "::error::sw.js doesn't list $f"; ok=0; }
+          done
+          for f in $(grep -oE "^  '[^']+'" sw.js | tr -d " '"); do
+            [ "$f" = ./ ] || [ -f "$f" ] || { echo "::error::sw.js lists $f, which doesn't exist"; ok=0; }
+          done
+          [ $ok = 1 ]
+
+      # Cache busting: each deploy's version is its commit hash. It goes on the local CSS, JS,
+      # image and font URLs as ?v=<hash> and names the service worker's cache, so browsers fetch
+      # the new files instead of mixing a new page with old scripts from their cache.
+      - name: Stamp the version
+        working-directory: _site
+        run: |
+          v="${GITHUB_SHA::7}"
+          sed -i -E "s#([\"']|\.\./|, )((css|js|img|fonts)/[A-Za-z0-9._/-]+\.(css|js|webp|woff2))#\1\2?v=$v#g" index.html css/style.css sw.js
+          sed -i "s/^const VERSION = 'dev';/const VERSION = '$v';/" sw.js
+          grep -q "^const VERSION = '$v';" sw.js
 
       # Replace gh-pages with a single fresh commit; Pages serves that branch.
       - name: Push to gh-pages
