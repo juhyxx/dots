@@ -1,0 +1,19 @@
+{
+  "id": "./",
+  "name": "Dots — for musical idiots",
+  "short_name": "Dots",
+  "description": "A browser game for learning to read musical notes on piano, guitar and bass, and to keep time with a metronome.",
+  "lang": "en",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#12151f",
+  "theme_color": "#12151f",
+  "categories": ["education", "games", "music"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
