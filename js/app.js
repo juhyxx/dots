@@ -795,7 +795,7 @@
     const chip = $('#micChip');
     chip.hidden = !(inst && I().mic && (screen === 'levels' || screen === 'game'));
     chip.classList.toggle('on', S().mic && !trouble);
-    chip.textContent = t(
+    chip.querySelector('.chip-label').textContent = t(
       st === 'unsupported' ? 'mic.chipNone' : !S().mic ? 'mic.chipOff' : st === 'denied' ? 'mic.chipDenied' : trouble ? 'mic.chipNone' : 'mic.chipOn'
     );
     if (st !== 'on') micMeter(0);

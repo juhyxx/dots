@@ -41,6 +41,7 @@ window.Dots = window.Dots || {};
       this.clefs = clefs;
       this.naming = naming;
       this.ext = this.extentFor(notes);
+      this.lastGame = null; // its notes may sit on a clef the new layout doesn't have
       this.layout();
     }
 
