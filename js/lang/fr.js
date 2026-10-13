@@ -31,6 +31,7 @@ Dots.I18n.add(
     'levels.back': '← Instruments',
     'levels.best': 'Record {n}',
     'levels.trouble': 'Tes notes difficiles',
+    'levels.troubleHint': 'Le pourcentage indique ton taux d’erreur sur chaque note.',
     'levels.troubleChip': '{note} · {pct} % d’erreurs',
     'mode.classic': 'Classique',
     'mode.sprint': 'Sprint {n} s',

@@ -31,6 +31,7 @@ Dots.I18n.add(
     'levels.back': '← 乐器',
     'levels.best': '最高 {n}',
     'levels.trouble': '你的易错音',
+    'levels.troubleHint': '百分比表示你答错每个音的频率。',
     'levels.troubleChip': '{note} · 错误率 {pct}%',
     'mode.classic': '经典',
     'mode.sprint': '冲刺 {n} 秒',

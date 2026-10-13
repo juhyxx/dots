@@ -7,6 +7,7 @@
   const data = Store.load();
   const S = () => data.settings;
   const staff = new Staff($('#staff'));
+  const sheet = new Staff($('#troubleSheet'));
   const beatView = new BeatView($('#beats'));
 
   let screen = 'home';
@@ -134,21 +135,33 @@
     renderTrouble();
   }
 
+  // The worst-read notes drawn on the instrument's staff, low to high, each where it went wrong most:
+  // the notes around middle C are read on either piano staff. Older stats don't say, so those go
+  // where free play would write them.
   function renderTrouble() {
     const rows = Object.entries(data.stats[inst])
-      .map(([id, s]) => ({ id, n: s.ok + s.bad, rate: s.bad / (s.ok + s.bad) }))
+      .map(([id, s]) => ({ id, s, n: s.ok + s.bad, rate: s.bad / (s.ok + s.bad) }))
       .filter((r) => r.n >= 4 && r.rate >= 0.15)
       .sort((a, b) => b.rate - a.rate)
       .slice(0, 8);
     $('#troubleBox').hidden = rows.length === 0;
-    $('#troubleList').replaceChildren(
-      ...rows.map((r) => {
-        const e = document.createElement('span');
-        e.className = 'trouble-chip';
-        e.textContent = t('levels.troubleChip', { note: Music.label(Music.parse(r.id), naming()), pct: Math.round(r.rate * 100) });
-        return e;
+    if (!rows.length) return;
+    const notes = rows
+      .map((r) => {
+        const note = Music.parse(r.id);
+        const label = Music.label(note, naming());
+        const [worst] = Object.entries(r.s.badOn || {}).sort((a, b) => b[1] - a[1]);
+        return {
+          ...writtenNote(note.midi, worst && worst[0]),
+          label,
+          caption: r.rate.toLocaleString(I18n.lang, { style: 'percent' }),
+          text: t('levels.troubleChip', { note: label, pct: Math.round(r.rate * 100) }),
+        };
       })
-    );
+      .sort((a, b) => a.midi - b.midi || (a.clef === 'bass' ? -1 : 1));
+    $('#troubleSheet').setAttribute('aria-label', notes.map((n) => n.text).join(', '));
+    sheet.clefs = I().clefs;
+    sheet.drawSheet(notes);
   }
 
   // ---------- routing
@@ -298,13 +311,17 @@
     );
   }
 
-  // Written MIDI pitch -> staff note on the right clef for this instrument.
-  // Piano notes above C7 / below C1 are written under 8va / 8vb, as in printed music.
-  function practiceNote(midi) {
+  // Written MIDI pitch -> staff note on the right clef for this instrument: on the piano, the given
+  // clef or else treble from middle C up. Piano notes above C7 / below C1 are written under
+  // 8va / 8vb, as in printed music.
+  function writtenNote(midi, clef) {
     const grand = I().clefs === 'grand';
-    const clef = grand ? (midi >= 60 ? 'treble' : 'bass') : I().clefs;
     const ottava = grand && midi > 96 ? 1 : grand && midi < 24 ? -1 : 0;
-    game.add({ ...Music.fromMidi(midi, ottava), clef });
+    return { ...Music.fromMidi(midi, ottava), clef: grand ? clef || (midi >= 60 ? 'treble' : 'bass') : I().clefs };
+  }
+
+  function practiceNote(midi) {
+    game.add(writtenNote(midi));
   }
 
   function renderIntro() {
@@ -412,11 +429,16 @@
     padTimer = setTimeout(() => (pad.className = 'tap-pad'), 90);
   }
 
+  // badOn counts the misses per clef, so the trouble notes are shown on the staff they were misread on
   function recordStat(note, ok) {
     const st = data.stats[inst];
     const s = st[note.id] || (st[note.id] = { ok: 0, bad: 0 });
     if (ok) s.ok++;
-    else s.bad++;
+    else {
+      s.bad++;
+      s.badOn = s.badOn || {};
+      s.badOn[note.clef] = (s.badOn[note.clef] || 0) + 1;
+    }
   }
 
   const hooks = {
@@ -932,15 +954,20 @@
     staff.resize();
     beatView.resize();
   }).observe($('#stage'));
+  // the sheet sets its own height, so it's redrawn on the next frame, outside the observer's callback
+  new ResizeObserver(() => requestAnimationFrame(() => sheet.drawSheet())).observe($('#troubleSheet'));
   document.addEventListener('visibilitychange', () => document.hidden && pause());
   if (document.fonts) {
     document.fonts
       .load('40px Bravura', '\uE050\uE062')
       .then((faces) => {
-        staff.smufl = faces.length > 0;
+        staff.smufl = sheet.smufl = faces.length > 0;
         if (staff.lastGame) staff.draw(staff.lastGame);
+        sheet.drawSheet();
       })
       .catch(() => {});
+    // the sheet isn't redrawn every frame like the game, so it's drawn again once the label font is in
+    document.fonts.ready.then(() => sheet.drawSheet());
   }
 
   window.addEventListener('popstate', route);

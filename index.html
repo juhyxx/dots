@@ -103,8 +103,11 @@
         </div>
         <div class="level-grid" id="levelGrid"></div>
         <div class="trouble" id="troubleBox" hidden>
-          <b data-i18n="levels.trouble">Your trouble notes</b>
-          <div class="trouble-list" id="troubleList"></div>
+          <div class="trouble-head">
+            <b data-i18n="levels.trouble">Your trouble notes</b>
+            <small data-i18n="levels.troubleHint">The percentage is how often you got each note wrong.</small>
+          </div>
+          <div class="trouble-sheet"><canvas id="troubleSheet" role="img"></canvas></div>
         </div>
       </section>
 

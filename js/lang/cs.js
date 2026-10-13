@@ -31,6 +31,7 @@ Dots.I18n.add(
     'levels.back': '← Nástroje',
     'levels.best': 'Rekord {n}',
     'levels.trouble': 'Noty, se kterými bojuješ',
+    'levels.troubleHint': 'Procento říká, jak často u noty chybuješ.',
     'levels.troubleChip': '{note} · {pct} % špatně',
     'mode.classic': 'Klasika',
     'mode.sprint': 'Sprint {n} s',

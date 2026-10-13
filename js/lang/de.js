@@ -31,6 +31,7 @@ Dots.I18n.add(
     'levels.back': '← Instrumente',
     'levels.best': 'Rekord {n}',
     'levels.trouble': 'Deine Problemnoten',
+    'levels.troubleHint': 'Die Prozentzahl zeigt, wie oft du die Note falsch hattest.',
     'levels.troubleChip': '{note} · {pct} % falsch',
     'mode.classic': 'Klassisch',
     'mode.sprint': 'Sprint {n} s',

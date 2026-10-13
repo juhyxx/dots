@@ -32,6 +32,7 @@ Dots.I18n.add('en', {
   'levels.back': '← Instruments',
   'levels.best': 'Best {n}',
   'levels.trouble': 'Your trouble notes',
+  'levels.troubleHint': 'The percentage is how often you got each note wrong.',
   'levels.troubleChip': '{note} · {pct}% wrong',
   'mode.classic': 'Classic',
   'mode.sprint': 'Sprint {n}s',

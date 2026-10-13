@@ -213,12 +213,13 @@ window.Dots = window.Dots || {};
       ctx.fill();
     }
 
-    drawStaves() {
-      const { ctx, S, w } = this;
+    // end: where the staff lines stop (the right edge unless given)
+    drawStaves(end = this.w) {
+      const { ctx, S } = this;
       ctx.strokeStyle = C.line;
       ctx.lineWidth = Math.max(1, S * 0.08);
       for (const st of Object.values(this.staves)) {
-        for (let i = 0; i < 5; i++) this.line(this.x0, st.top + i * S, w, st.top + i * S);
+        for (let i = 0; i < 5; i++) this.line(this.x0, st.top + i * S, end, st.top + i * S);
         if (this.smufl) this.smuflGlyph(st.clef === 'treble' ? SMUFL.gClef : SMUFL.fClef, this.clefX, st.top + (st.clef === 'treble' ? 3 : 1) * S, C.ink);
         else if (st.clef === 'treble') this.glyph(TREBLE, this.clefX, st.top - 1.45 * S, st.top + 5.65 * S, C.ink);
         else this.glyph(BASS, this.clefX, st.top - 0.05 * S, st.top + 3.5 * S, C.ink);
@@ -528,6 +529,91 @@ window.Dots = window.Dots || {};
       }
       ctx.restore();
       ctx.globalAlpha = 1;
+    }
+
+    // Staff spaces a still score needs above its top staff and below its bottom one: room for the
+    // clefs, then for notes on ledger lines and their 8va / 8vb signs. Stems always fit in that.
+    sheetExtent(notes) {
+      const order = this.clefs === 'grand' ? ['treble', 'bass'] : [this.clefs];
+      let above = 2;
+      let below = 2;
+      for (const n of notes) {
+        const b = n.clef === 'treble' ? 30 : 18;
+        if (n.clef === order[0]) above = Math.max(above, (n.step - b - 8) / 2 + (n.ottava > 0 ? 3.1 : 0.6));
+        if (n.clef === order[order.length - 1]) below = Math.max(below, (b - n.step) / 2 + (n.ottava < 0 ? 3.1 : 0.6));
+      }
+      return { above, below };
+    }
+
+    // A still score of single notes (the trouble notes on the levels screen), each with a name pill
+    // and a caption under the staff. Wraps onto more systems when the notes don't fit across.
+    // The canvas keeps the width it's given and sets its own height.
+    // notes: staff notes with { label, caption }; left out, the last ones are drawn again.
+    drawSheet(notes = this.sheetNotes) {
+      this.sheetNotes = notes;
+      const { canvas, ctx } = this;
+      const w = canvas.clientWidth;
+      if (!w || !notes || !notes.length) return;
+      const grand = this.clefs === 'grand';
+      const S = (this.S = Math.max(7, Math.min(12, w / 34)));
+      const fs = Math.max(12, S * 1.15); // labels stay readable on a small staff
+      this.x0 = 14 + (grand ? S * 1.2 : 0);
+      this.clefX = this.x0 + 0.5 * S;
+      const left = this.x0 + 4.5 * S;
+      const end = w - S * 1.5;
+
+      // columns as wide as the widest label; the notes are shared out evenly between the systems
+      ctx.font = `800 ${fs}px ${UI_FONT}`;
+      const col = Math.max(S * 3, ...notes.map((n) => Math.max(ctx.measureText(n.label).width + fs * 0.9, ctx.measureText(n.caption).width))) + S * 0.8;
+      const rows = Math.ceil(notes.length / Math.max(1, Math.floor((end - S - left) / col)));
+      const per = Math.ceil(notes.length / rows);
+      const systems = [];
+      let h = 0;
+      for (let i = 0; i < notes.length; i += per) {
+        const part = notes.slice(i, i + per);
+        const { above, below } = this.sheetExtent(part);
+        const top = h + (1 + above) * S;
+        const pillY = top + ((grand ? 14 : 4) + below + 1.2) * S;
+        systems.push({ part, top, pillY, captionY: pillY + fs * 1.45 });
+        h = pillY + fs * 2.2;
+      }
+
+      this.dpr = Math.min(window.devicePixelRatio || 1, 2);
+      this.w = w;
+      this.h = Math.ceil(h);
+      canvas.style.height = `${this.h}px`;
+      canvas.width = Math.round(w * this.dpr);
+      canvas.height = Math.round(this.h * this.dpr);
+      ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+      ctx.clearRect(0, 0, w, this.h);
+
+      systems.forEach(({ part, top, pillY, captionY }, si) => {
+        this.staves = grand
+          ? { treble: { clef: 'treble', top, bottom: 30 }, bass: { clef: 'bass', top: top + 10 * S, bottom: 18 } }
+          : { [this.clefs]: { clef: this.clefs, top, bottom: this.clefs === 'treble' ? 30 : 18 } };
+        this.drawStaves(end);
+        // a barline closes each system, the double one closes the last
+        const bottom = top + (grand ? 14 : 4) * S;
+        ctx.strokeStyle = C.line;
+        ctx.lineWidth = Math.max(1, S * 0.12);
+        if (si === systems.length - 1) {
+          ctx.fillStyle = C.line;
+          ctx.fillRect(end - S * 0.5, top, S * 0.5, bottom - top);
+          this.line(end - S * 0.95, top, end - S * 0.95, bottom);
+        } else this.line(end, top, end, bottom);
+
+        const cw = (end - S - left) / per;
+        part.forEach((n, i) => {
+          const st = this.staves[n.clef];
+          if (!st) return;
+          const x = left + cw * (i + 0.5);
+          this.drawNote(x, st, n.step, C.ink, 1, n.ottava);
+          this.pill(n.label, x, pillY, C.bad, '#fff', fs);
+          ctx.fillStyle = C.bad;
+          ctx.font = `800 ${fs}px ${UI_FONT}`;
+          ctx.fillText(n.caption, x, captionY);
+        });
+      });
     }
 
     drawCountdown(t) {
