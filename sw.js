@@ -12,7 +12,8 @@
 const VERSION = 'dev';
 const CACHE = 'dots-' + VERSION;
 
-// Everything index.html loads. The deploy fails if a local file there is missing here.
+// Everything index.html loads, plus the piano samples js/audio.js fetches. The deploy fails if a
+// local file index.html loads is missing here.
 const FILES = [
   './',
   'manifest.webmanifest',
@@ -29,6 +30,36 @@ const FILES = [
   'img/guitar-400.webp',
   'img/bass.webp',
   'img/bass-400.webp',
+  'samples/piano/A0.mp3',
+  'samples/piano/A1.mp3',
+  'samples/piano/A2.mp3',
+  'samples/piano/A3.mp3',
+  'samples/piano/A4.mp3',
+  'samples/piano/A5.mp3',
+  'samples/piano/A6.mp3',
+  'samples/piano/A7.mp3',
+  'samples/piano/C1.mp3',
+  'samples/piano/C2.mp3',
+  'samples/piano/C3.mp3',
+  'samples/piano/C4.mp3',
+  'samples/piano/C5.mp3',
+  'samples/piano/C6.mp3',
+  'samples/piano/C7.mp3',
+  'samples/piano/C8.mp3',
+  'samples/piano/Ds1.mp3',
+  'samples/piano/Ds2.mp3',
+  'samples/piano/Ds3.mp3',
+  'samples/piano/Ds4.mp3',
+  'samples/piano/Ds5.mp3',
+  'samples/piano/Ds6.mp3',
+  'samples/piano/Ds7.mp3',
+  'samples/piano/Fs1.mp3',
+  'samples/piano/Fs2.mp3',
+  'samples/piano/Fs3.mp3',
+  'samples/piano/Fs4.mp3',
+  'samples/piano/Fs5.mp3',
+  'samples/piano/Fs6.mp3',
+  'samples/piano/Fs7.mp3',
   'js/i18n.js',
   'js/lang/en.js',
   'js/lang/cs.js',

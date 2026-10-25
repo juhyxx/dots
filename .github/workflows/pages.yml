@@ -22,7 +22,7 @@ jobs:
       - name: Collect site files
         run: |
           mkdir -p _site/img
-          cp -r index.html sw.js manifest.webmanifest css js fonts icons _site/
+          cp -r index.html sw.js manifest.webmanifest css js fonts icons samples _site/
           cp img/*.webp _site/img/
           touch _site/.nojekyll
 

@@ -8,7 +8,7 @@ Play it at **https://juhyxx.github.io/dots/**.
 
 You can install it as an app (Add to Home Screen on phones, the install button in Chrome's or Edge's address bar on desktop). After the first visit it also works offline.
 
-No server and no build step. Open `index.html` in a browser, or serve the folder with any static server (installing and offline play need a server, not `file://`). The music font ([Bravura](https://github.com/steinbergmedia/bravura), SIL Open Font License) is bundled in `fonts/`, so clefs and accidentals render the same everywhere, including offline.
+No server and no build step. Open `index.html` in a browser, or serve the folder with any static server (installing, offline play and the piano samples need a server, not `file://`; without it the piano is synthesized). The music font ([Bravura](https://github.com/steinbergmedia/bravura), SIL Open Font License) is bundled in `fonts/`, so clefs and accidentals render the same everywhere, including offline.
 
 ## Instruments
 
@@ -66,6 +66,7 @@ manifest.webmanifest  app name, colours and icons for installing
 icons/              app icons (PNG + SVG favicon)
 css/style.css
 img/*.webp          instrument photos for the home cards (800×400 + 400×200)
+samples/piano/      grand piano samples, one every minor third (A0–C8)
 js/i18n.js          language detection, string lookup (with plurals), data-i18n attributes
 js/lang/*.js        one file per language; en.js is the source and the fallback
 js/music.js         note math, B/H/solfège naming
@@ -75,7 +76,7 @@ js/staff.js         canvas staff renderer
 js/instruments.js   clickable piano + fretboard
 js/rhythm.js        metronome levels + engine (schedule clicks, judge taps)
 js/beats.js         canvas renderer for the metronome
-js/audio.js         Web Audio synth, metronome click, audio clock ↔ event time
+js/audio.js         Web Audio: sampled piano, synth guitar/bass, metronome click, audio clock ↔ event time
 js/midi.js          Web MIDI input
 js/mic.js           audio input: YIN pitch detection, one report per played note
 js/store.js         localStorage
@@ -88,7 +89,7 @@ The card photos are 2:1 crops of the originals, saved as WebP at 800×400 and 40
 
 ## Deployment
 
-Every push to `master` deploys to GitHub Pages via `.github/workflows/pages.yml`. The workflow copies `index.html`, `sw.js`, `manifest.webmanifest`, `css/`, `js/`, `fonts/`, `icons/` and the `img/*.webp` photos and force-pushes them to the `gh-pages` branch, which Pages serves. You can also run it by hand from the Actions tab.
+Every push to `master` deploys to GitHub Pages via `.github/workflows/pages.yml`. The workflow copies `index.html`, `sw.js`, `manifest.webmanifest`, `css/`, `js/`, `fonts/`, `icons/`, `samples/` and the `img/*.webp` photos and force-pushes them to the `gh-pages` branch, which Pages serves. You can also run it by hand from the Actions tab.
 
 The only change on the way is the version stamp. Each deploy's version is its short commit hash. It's added to every CSS, JS, image and font URL as `?v=<hash>` (in `index.html`, `css/style.css` and `sw.js`) and becomes `VERSION` in `sw.js`. So browsers never mix a new page with old scripts from their cache:
 
@@ -97,3 +98,7 @@ The only change on the way is the version stamp. Each deploy's version is its sh
 - Locally, `sw.js` keeps `VERSION = 'dev'`. Then it loads everything from the network first, so your edits show up on reload; the cache is only for offline.
 
 Before stamping, the workflow checks that `FILES` in `sw.js` lists every local file `index.html` and `css/style.css` load, and only files that exist. Otherwise the deploy fails.
+
+## Credits
+
+- Piano: Salamander Grand Piano by Alexander Holm (CC BY 3.0), via the Tone.js audio repository
