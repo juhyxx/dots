@@ -29,7 +29,7 @@ Each instrument has a **Practice** card at the top of its level list. It's free 
 
 ## Levels
 
-Guitar and bass have 10 levels each and start with the open strings. Piano has 19 levels and covers all 88 keys (A0–C8): first the treble clef, then the bass clef, each followed by its ledger-line notes, then both staves together. The last lessons cover the extremes: up to five ledger lines (C1 and C7), and beyond that 8va / 8vb, which is how printed music writes the top and bottom octaves. You unlock the next one by passing the current one. Notes move faster as the levels go up, and they also speed up a little within a level as you get answers right.
+Guitar and bass have 10 levels each and start with the open strings. Piano has 39 levels and covers all 88 keys (A0–C8). It adds a few notes at a time: in the treble clef, middle C and the notes above it, then the same five notes an octave higher, then the lines, spaces and ledger notes; the bass clef goes the same way down from middle C. Each clef ends with intervals: thirds, fifths and octaves, two notes at once that you play both of, in any order (on MIDI you can play them together). Then both staves together, with seconds, fourths, sixths and a mix of all the intervals. The last lessons cover the extremes: up to five ledger lines (C1 and C7), and beyond that 8va / 8vb, which is how printed music writes the top and bottom octaves. You unlock the next one by passing the current one. Notes move faster as the levels go up, and they also speed up a little within a level as you get answers right.
 
 - **Classic:** get N right; you have 3 lives, and a wrong answer or a missed note costs one.
 - **Sprint:** get N right within 60 s; each mistake costs 3 s.

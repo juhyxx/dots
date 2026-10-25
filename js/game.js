@@ -62,7 +62,7 @@ Dots.Game = class Game {
     let total = 0;
     // avoid immediate repeats; notes you got wrong come back more often
     const weights = pool.map((n) => {
-      const w = this.prev && pool.length > 1 && n.midi === this.prev.midi ? 0 : 1 + 1.5 * Math.min(3, this.bad[n.id] || 0);
+      const w = this.prev && pool.length > 1 && n.id === this.prev.id ? 0 : 1 + 1.5 * Math.min(3, this.bad[n.id] || 0);
       total += w;
       return w;
     });
@@ -77,7 +77,7 @@ Dots.Game = class Game {
   spawn() {
     const base = this.pick();
     this.prev = base;
-    this.notes.push({ ...base, uid: ++this.uid, p: 0, state: 'live', age: 0, shake: 0, born: this.clock });
+    this.notes.push({ ...base, uid: ++this.uid, p: 0, state: 'live', age: 0, shake: 0, born: this.clock, played: new Set() });
     this.since = 0;
     this.idle = 0;
   }
@@ -137,18 +137,38 @@ Dots.Game = class Game {
     }
   }
 
-  // ans: { idx, midi|null, label, source }. Returns { result, note } or null.
+  // the notes of a target: just itself, or both notes of an interval
+  parts(n) {
+    return n.notes || [n];
+  }
+
+  pending(n) {
+    return this.parts(n).filter((p) => !n.played.has(p));
+  }
+
+  // ans: { idx, midi|null, label, source }. Returns { result, note } or null; note is the note that was played.
+  // An interval's notes can come in any order; it's hit once both are in.
   input(ans) {
     if (this.state !== 'playing') return null;
     const n = this.target;
     if (!n) return null;
 
-    const verdict = this.check(n, ans);
+    let part = null;
+    let verdict = false;
+    for (const p of this.pending(n)) {
+      const v = this.check(p, ans);
+      if (v && (!verdict || v === 'hit')) [part, verdict] = [p, v];
+    }
+    // playing a note of the interval again is neither right nor wrong
+    if (!verdict && this.parts(n).some((p) => n.played.has(p) && this.check(p, ans) === 'hit')) return null;
     if (verdict) {
+      n.played.add(part);
+      if (verdict === 'octave') n.octave = true;
+      this.emit('onResult', verdict, [part], ans);
+      if (this.pending(n).length) return { result: verdict, note: part };
       // right letter in the wrong octave still counts, but for half points and no streak growth
-      const octave = verdict === 'octave';
+      const octave = !!n.octave;
       n.state = 'hit';
-      n.octave = octave;
       n.age = 0;
       this.correct++;
       if (!octave) this.combo++;
@@ -161,9 +181,8 @@ Dots.Game = class Game {
       else this.fx.push({ note: n, text: '+' + pts, color: 'good', age: 0, life: 0.9 });
       if (!octave && this.combo % 10 === 0) this.fx.push({ text: Dots.I18n.t('fx.streak', { n: this.combo }), color: 'accent', age: 0, life: 1.4 });
       this.speed = Math.min(this.level.maxSpeed, this.speed + this.level.ramp);
-      this.emit('onResult', octave ? 'octave' : 'hit', n, ans);
       if (this.correct >= this.level.goal) this.end(true, 'goal');
-      return { result: octave ? 'octave' : 'hit', note: n };
+      return { result: verdict, note: part };
     }
 
     this.wrong++;
@@ -171,7 +190,7 @@ Dots.Game = class Game {
     n.shake = 0.4;
     this.bad[n.id] = (this.bad[n.id] || 0) + 1;
     this.fx.push({ note: n, text: Dots.I18n.t('fx.not', { note: ans.label }), color: 'bad', age: 0, life: 0.9 });
-    this.emit('onResult', 'wrong', n, ans);
+    this.emit('onResult', 'wrong', this.pending(n), ans);
     this.penalize();
     return { result: 'wrong', note: n };
   }
@@ -182,7 +201,7 @@ Dots.Game = class Game {
     this.missed++;
     this.combo = 0;
     this.bad[n.id] = (this.bad[n.id] || 0) + 1;
-    this.emit('onResult', 'miss', n, null);
+    this.emit('onResult', 'miss', this.pending(n), null);
     this.penalize();
   }
 

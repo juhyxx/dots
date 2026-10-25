@@ -1,10 +1,10 @@
-// Instruments and the ten levels for each of them.
+// Instruments and their levels.
 // All pitches are WRITTEN pitch. Guitar and bass are written an octave higher than they sound
 // (plain clefs, no 8 mark), so they play back an octave lower.
 window.Dots = window.Dots || {};
 
 (() => {
-  const { parse, range, fromMidi } = Dots.Music;
+  const { parse, range, fromStep, fromMidi } = Dots.Music;
 
   Dots.INSTRUMENTS = {
     piano: {
@@ -55,6 +55,18 @@ window.Dots = window.Dots || {};
   const P = (clef, ...names) => on(clef, names.map(parse));
   // notes written under 8va (ottava 1) or 8vb (ottava -1)
   const O = (clef, ottava, a, b) => range(a, b).map((n) => ({ ...fromMidi(n.midi, ottava), clef }));
+  // intervals, two notes played together: every one of each size (2 = a second … 8 = an octave) between a and b
+  const IV = (clef, sizes, a, b) =>
+    sizes.flatMap((size) => {
+      const out = [];
+      for (let s = parse(a).step; s + size - 1 <= parse(b).step; s++) {
+        const notes = [fromStep(s), fromStep(s + size - 1)].map((n) => ({ ...n, clef }));
+        out.push({ id: notes.map((n) => n.id).join('+'), clef, notes });
+      }
+      return out;
+    });
+  // the same intervals on both piano staves: around the treble staff and around the bass staff
+  const IV2 = (sizes) => [...IV('treble', sizes, 'C4', 'C6'), ...IV('bass', sizes, 'C2', 'C4')];
 
   // travel = seconds a note needs from the right edge to the hit line
   // density = roughly how many notes are on screen at once
@@ -62,22 +74,45 @@ window.Dots = window.Dots || {};
 
   Dots.Levels = {
     piano: [
-      // treble clef, then the ledger notes around it
-      L({ name: 'Middle C & Friends', desc: 'Treble clef: the five notes from middle C up.', pool: R('treble', 'C4', 'G4'), travel: 8, density: 2 }),
-      L({ name: 'Treble Lines', desc: 'The notes sitting on the five treble lines.', pool: P('treble', 'E4', 'G4', 'B4', 'D5', 'F5'), travel: 7.5, density: 2 }),
+      // treble clef, a few notes at a time: middle C up, the same notes an octave higher, then the staff and its ledger notes
+      L({ name: 'Middle C & Friends', desc: 'Treble clef: middle C and the two notes above it.', pool: R('treble', 'C4', 'E4'), travel: 8, density: 2 }),
+      L({ name: 'Up to G', desc: 'Adding F and G: the five notes from middle C up.', pool: R('treble', 'C4', 'G4'), travel: 8, density: 2 }),
+      L({ name: 'G to C', desc: 'The next four notes, from G up to the C above middle C.', pool: R('treble', 'G4', 'C5'), travel: 7.8, density: 2 }),
+      L({ name: 'Middle C Octave', desc: 'The whole octave from middle C up to the next C.', pool: R('treble', 'C4', 'C5'), travel: 7.6, density: 2 }),
+      L({ name: 'One Octave Up', desc: 'The five notes from middle C up, an octave higher.', pool: R('treble', 'C5', 'G5'), travel: 7.5, density: 2 }),
+      L({ name: 'Above the Treble', desc: 'Ledger lines over the treble staff, up to high C.', pool: R('treble', 'F5', 'C6'), travel: 7.3, density: 2 }),
+      L({ name: 'Upper Octave', desc: 'The whole octave from the C above middle C up to high C.', pool: R('treble', 'C5', 'C6'), travel: 7.2, density: 2 }),
+      L({ name: 'Treble Lines', desc: 'The notes sitting on the five treble lines.', pool: P('treble', 'E4', 'G4', 'B4', 'D5', 'F5'), travel: 7, density: 2 }),
       L({ name: 'Treble Spaces', desc: 'The notes in the four treble spaces.', pool: P('treble', 'F4', 'A4', 'C5', 'E5'), travel: 7, density: 2 }),
-      L({ name: 'Below the Treble', desc: 'Ledger lines under the treble staff, down to A below middle C.', pool: R('treble', 'A3', 'E4'), travel: 7, density: 2 }),
-      L({ name: 'Above the Treble', desc: 'Ledger lines over the treble staff, up to high C.', pool: R('treble', 'F5', 'C6'), travel: 6.8, density: 2 }),
+      L({ name: 'Below the Treble', desc: 'Ledger lines under the treble staff, down to A below middle C.', pool: R('treble', 'A3', 'E4'), travel: 6.8, density: 2 }),
       L({ name: 'Treble Sprint', desc: 'The whole treble clef with its ledger lines, against the clock.', pool: R('treble', 'A3', 'C6'), mode: 'sprint', goal: 25, travel: 6.5 }),
-      // bass clef, then the ledger notes around it
-      L({ name: 'Into the Bass', desc: 'Bass clef: from middle C downwards.', pool: R('bass', 'C3', 'C4'), travel: 6.5, density: 2 }),
+      // intervals in the treble clef: two notes at once
+      L({ name: 'Treble Thirds', desc: 'Treble clef, two notes at once a third apart: on neighbouring lines or in neighbouring spaces.', pool: IV('treble', [3], 'C4', 'C6'), travel: 7.5, density: 2, goal: 12 }),
+      L({ name: 'Treble Fifths', desc: 'Treble clef, two notes a fifth apart: both on lines or both in spaces, with one line or space between them.', pool: IV('treble', [5], 'C4', 'C6'), travel: 7.3, density: 2, goal: 12 }),
+      L({ name: 'Treble Octaves', desc: 'Treble clef, the same note eight steps apart: one on a line, the other in a space.', pool: IV('treble', [8], 'C4', 'C6'), travel: 7.2, density: 2, goal: 12 }),
+      // bass clef the same way down: middle C down, an octave lower, then the staff and its ledger notes
+      L({ name: 'Into the Bass', desc: 'Bass clef: middle C and the two notes below it.', pool: R('bass', 'A3', 'C4'), travel: 7, density: 2 }),
+      L({ name: 'Down to F', desc: 'Adding G and F: the five notes from middle C down.', pool: R('bass', 'F3', 'C4'), travel: 7, density: 2 }),
+      L({ name: 'F to C', desc: 'The next four notes, from F down to the C below middle C.', pool: R('bass', 'C3', 'F3'), travel: 6.8, density: 2 }),
+      L({ name: 'Octave Below Middle C', desc: 'The whole octave from middle C down to the next C.', pool: R('bass', 'C3', 'C4'), travel: 6.6, density: 2 }),
+      L({ name: 'One Octave Down', desc: 'The five notes from middle C down, an octave lower.', pool: R('bass', 'F2', 'C3'), travel: 6.5, density: 2 }),
+      L({ name: 'Below the Bass', desc: 'Ledger lines under the bass staff, down to low C.', pool: R('bass', 'C2', 'G2'), travel: 6.4, density: 2 }),
+      L({ name: 'Lower Octave', desc: 'The whole octave from the C below middle C down to low C.', pool: R('bass', 'C2', 'C3'), travel: 6.2 }),
       L({ name: 'Bass Lines', desc: 'The notes sitting on the five bass lines.', pool: P('bass', 'G2', 'B2', 'D3', 'F3', 'A3'), travel: 6.2, goal: 18 }),
       L({ name: 'Bass Spaces', desc: 'The notes in the four bass spaces.', pool: P('bass', 'A2', 'C3', 'E3', 'G3'), travel: 6, goal: 18 }),
       L({ name: 'Above the Bass', desc: 'Ledger lines over the bass staff, up to E above middle C.', pool: R('bass', 'A3', 'E4'), travel: 6, goal: 18 }),
-      L({ name: 'Below the Bass', desc: 'Ledger lines under the bass staff, down to low C.', pool: R('bass', 'C2', 'G2'), travel: 5.8, goal: 18 }),
+      // intervals in the bass clef
+      L({ name: 'Bass Thirds', desc: 'Bass clef, two notes at once a third apart: on neighbouring lines or in neighbouring spaces.', pool: IV('bass', [3], 'C2', 'C4'), travel: 7, density: 2, goal: 12 }),
+      L({ name: 'Bass Fifths', desc: 'Bass clef, two notes a fifth apart: both on lines or both in spaces, with one line or space between them.', pool: IV('bass', [5], 'C2', 'C4'), travel: 6.8, density: 2, goal: 12 }),
+      L({ name: 'Bass Octaves', desc: 'Bass clef, the same note eight steps apart: one on a line, the other in a space.', pool: IV('bass', [8], 'C2', 'C4'), travel: 6.8, density: 2, goal: 12 }),
       // both staves
       L({ name: 'Middle C Crossing', desc: 'The same notes around middle C, written on either staff.', pool: [...R('treble', 'A3', 'E4'), ...R('bass', 'A3', 'E4')], travel: 5.5, goal: 20 }),
       L({ name: 'Grand Sprint', desc: 'Both clefs mixed, against the clock.', pool: [...R('bass', 'E2', 'B3'), ...R('treble', 'C4', 'A5')], mode: 'sprint', goal: 30, travel: 5 }),
+      // the other intervals, on both staves
+      L({ name: 'Seconds', desc: 'Two neighbouring notes, one on a line and one in a space, on either staff.', pool: IV2([2]), travel: 6.5, density: 2, goal: 12 }),
+      L({ name: 'Fourths', desc: 'Two notes a fourth apart, one on a line and one in a space, on either staff.', pool: IV2([4]), travel: 6.3, density: 2, goal: 12 }),
+      L({ name: 'Sixths', desc: 'Two notes a sixth apart, one on a line and one in a space, on either staff.', pool: IV2([6]), travel: 6.2, density: 2, goal: 12 }),
+      L({ name: 'Interval Mix', desc: 'Seconds, thirds, fourths, fifths, sixths and octaves mixed, on either staff.', pool: IV2([2, 3, 4, 5, 6, 8]), travel: 6, density: 2, goal: 15 }),
       L({ name: 'Ledger Land', desc: 'Only notes on ledger lines, above and below both staves.', pool: [...P('treble', 'A3', 'B3', 'C4', 'A5', 'B5', 'C6'), ...P('bass', 'C2', 'D2', 'E2', 'C4', 'D4', 'E4')], travel: 4.8, goal: 20 }),
       // the far ends of the keyboard: up to five ledger lines, then 8va / 8vb
       L({ name: 'High Treble', desc: 'Up to five ledger lines over the treble staff, as high as C7.', pool: R('treble', 'C6', 'C7'), travel: 4.8, goal: 20 }),

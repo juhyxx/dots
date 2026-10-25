@@ -31,6 +31,8 @@
   const naming = () => S().naming || I18n.naming();
   const letters = () => Music.LETTERS.map((_, i) => Music.letter(i, naming())).join(' ');
   const lvl = (l) => I18n.level(inst, l); // translated { name, desc }
+  // the single notes of a level's pool, with both notes of each interval
+  const poolNotes = (pool) => pool.flatMap((n) => n.notes || [n]);
   const view = () => (game && game.rhythm ? beatView : staff);
   const starStr = (n, max = 3) => '★'.repeat(n) + `<span class="off">${'★'.repeat(max - n)}</span>`;
   // joins whole sentences (Chinese runs them together without a space)
@@ -70,10 +72,11 @@
         : t('how.answerText', { keys: `<span class="letters">${letters()}</span>` });
   }
 
-  const unlocked = (k, i) => S().unlockAll || i === 0 || (prog(k, i - 1).stars || 0) > 0;
+  // a level you've passed stays open, also when a new level is added before it
+  const unlocked = (k, i) => S().unlockAll || i === 0 || (prog(k, i).stars || 0) > 0 || (prog(k, i - 1).stars || 0) > 0;
 
   function notesSummary(pool) {
-    const uniq = [...new Map(pool.map((n) => [n.midi, n])).values()].sort((a, b) => a.midi - b.midi);
+    const uniq = [...new Map(poolNotes(pool).map((n) => [n.midi, n])).values()].sort((a, b) => a.midi - b.midi);
     if (uniq.length <= 7) return uniq.map((n) => Music.letter(n.idx, naming())).join(' ');
     return `${Music.label(uniq[0], naming())} – ${Music.label(uniq[uniq.length - 1], naming())}`;
   }
@@ -86,9 +89,10 @@
   }
 
   function rulesText(l) {
-    if (l.mode === 'sprint') return t('rules.sprint', { goal: l.goal, time: l.time, penalty: l.penalty });
-    if (l.mode === 'survival') return t('rules.survival', { goal: l.goal, lives: l.lives });
-    return t('rules.classic', { goal: l.goal, lives: l.lives });
+    const both = l.pool.some((n) => n.notes) && t('rules.interval');
+    if (l.mode === 'sprint') return sentences(t('rules.sprint', { goal: l.goal, time: l.time, penalty: l.penalty }), both);
+    if (l.mode === 'survival') return sentences(t('rules.survival', { goal: l.goal, lives: l.lives }), both);
+    return sentences(t('rules.classic', { goal: l.goal, lives: l.lives }), both);
   }
 
   const barsText = (l) => t('met.bars', { n: l.bars }) + (l.gaps ? ' · ' + t('met.gapShort') : '');
@@ -376,7 +380,7 @@
     }
     const common = { labels: S().labels, naming: naming(), onPress: onInstrumentPress };
     if (I().input === 'piano') {
-      const mids = game.practice ? I().practiceRange.map((n) => Music.parse(n).midi) : level().pool.map((n) => n.midi);
+      const mids = game.practice ? I().practiceRange.map((n) => Music.parse(n).midi) : poolNotes(level().pool).map((n) => n.midi);
       const low = Math.floor(Math.min(...mids) / 12) * 12;
       let high = Math.ceil(Math.max(...mids) / 12) * 12;
       if (high - low < 24) high = low + 24;
@@ -445,13 +449,11 @@
     onTick(final) {
       Audio.tick(final);
     },
-    onResult(kind, note) {
-      recordStat(note, kind === 'hit' || kind === 'octave');
-      if (kind === 'octave') inputUI.hint(note.midi);
-      if (kind === 'miss') {
-        inputUI.hint(note.midi);
-        Audio.buzz(true);
-      }
+    // notes: the one just played (hit, octave), or those not played yet (wrong, miss)
+    onResult(kind, notes) {
+      for (const n of notes) recordStat(n, kind === 'hit' || kind === 'octave');
+      if (kind === 'octave' || kind === 'miss') for (const n of notes) inputUI.hint(n.midi);
+      if (kind === 'miss') Audio.buzz(true);
     },
     onEnd(result) {
       const ended = game;
@@ -599,8 +601,9 @@
     let sub = resultSub(r);
     if (!r.win && r.reason === 'time') sub = t('res.timeSub', { correct: r.correct, goal: level().goal });
     else if (!r.win) sub = t('res.livesSub');
+    const label = (id) => (level().pool.find((n) => n.id === id).notes || [Music.parse(id)]).map((n) => Music.label(n, naming())).join('–');
     const trouble = r.trouble.length
-      ? `<p class="trouble-line">${t('res.watch', { notes: r.trouble.map((id) => `<b>${Music.label(Music.parse(id), naming())}</b>`).join(', ') })}</p>`
+      ? `<p class="trouble-line">${t('res.watch', { notes: r.trouble.map((id) => `<b>${label(id)}</b>`).join(', ') })}</p>`
       : '';
     const html = `
       <div class="big-stars">${starStr(r.stars)}</div>

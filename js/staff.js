@@ -22,6 +22,8 @@ window.Dots = window.Dots || {};
 
   // distance (in staff spaces) from a note head to its name label: clear of sharps and 8va/8vb
   const labelSpaces = (n) => (n.ottava ? 3.9 : n.sharp ? 2.2 : 1.7);
+  // the note heads of a game note: just itself, or the notes of an interval (low to high)
+  const heads = (n) => n.notes || [n];
 
   class Staff {
     constructor(canvas) {
@@ -49,7 +51,7 @@ window.Dots = window.Dots || {};
     extentFor(notes) {
       let top = 4.5;
       let bottom = 4.5;
-      for (const n of notes) {
+      for (const n of notes.flatMap(heads)) {
         const label = labelSpaces(n) + 0.75; // label offset + half a pill
         if (n.clef === 'treble') top = Math.max(top, (n.step - 38) / 2 + label);
         if (n.clef === 'bass') bottom = Math.max(bottom, (18 - n.step) / 2 + label);
@@ -277,7 +279,7 @@ window.Dots = window.Dots || {};
       const st = this.staffFor(n);
       if (!st) return;
       let x = this.noteX(n);
-      const y = this.y(st, n.step);
+      const y = this.y(st, heads(n)[heads(n).length - 1].step);
       let color = C.ink;
       let alpha = 1;
       let scale = 1;
@@ -294,6 +296,11 @@ window.Dots = window.Dots || {};
         color = C.bad;
       }
       ctx.globalAlpha = alpha;
+      if (n.notes) {
+        this.drawGameInterval(n, x, st, color, scale, isTarget);
+        ctx.globalAlpha = 1;
+        return;
+      }
       if (isTarget) {
         ctx.fillStyle = C.glow;
         ctx.beginPath();
@@ -308,17 +315,61 @@ window.Dots = window.Dots || {};
       ctx.globalAlpha = 1;
     }
 
+    // an interval on its way: the notes already played turn green; a miss names the ones left
+    drawGameInterval(n, x, st, color, scale, isTarget) {
+      const { S } = this;
+      const L = this.chordLayout(st, n.notes);
+      const yTop = this.y(st, L.steps[L.steps.length - 1].step);
+      if (isTarget) this.chordGlow(x, st, L);
+      const live = n.state === 'live' && !n.shake;
+      this.drawChord(x, st, L, color, scale, (h) => live && n.played.has(h) && C.good);
+      if (n.state === 'miss') {
+        const names = n.notes.filter((h) => !n.played.has(h)).map((h) => Dots.Music.letter(h.idx, this.naming));
+        this.pill(names.join(' '), x, L.up ? yTop - S * 4.4 : yTop - S * 1.9, C.bad, '#fff', S * 1.05);
+      }
+    }
+
+    chordGlow(x, st, L) {
+      const { ctx, S } = this;
+      const yTop = this.y(st, L.steps[L.steps.length - 1].step) - S * 1.1;
+      const yBot = this.y(st, L.steps[0].step) + S * 1.1;
+      const x1 = x - S * 1.2 - L.pushLeft;
+      const x2 = x + S * 1.2 + L.pushRight;
+      ctx.fillStyle = C.glow;
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(x1, yTop, x2 - x1, yBot - yTop, S * 1.1);
+      else ctx.rect(x1, yTop, x2 - x1, yBot - yTop);
+      ctx.fill();
+    }
+
     drawPreview(pool) {
       const { S, w } = this;
-      const notes = [...pool].sort((a, b) => a.midi - b.midi || (a.clef === 'bass' ? -1 : 1));
+      const low = (n) => heads(n)[0].midi;
+      const size = (n) => heads(n)[heads(n).length - 1].step - heads(n)[0].step;
+      let notes = [...pool].sort((a, b) => size(a) - size(b) || low(a) - low(b) || (a.clef === 'bass' ? -1 : 1));
       const left = this.hitX + S * 2;
       const right = w - S * 2;
+      const intervals = notes.some((n) => n.notes);
+      // more intervals than fit across, each with its name: an even sample of them, smallest first
+      const fit = Math.max(2, Math.floor((right - left) / (S * 3.4)) + 1);
+      if (intervals && notes.length > fit) notes = Array.from({ length: fit }, (_, i) => notes[Math.round((i * (notes.length - 1)) / (fit - 1))]);
       const gap = notes.length > 1 ? (right - left) / (notes.length - 1) : 0;
-      const labels = notes.length === 1 || gap >= S * 1.9;
+      const labels = notes.length === 1 || gap >= S * (intervals ? 3.4 : 1.9);
       notes.forEach((n, i) => {
         const st = this.staffFor(n);
         if (!st) return;
         const x = notes.length > 1 ? left + i * gap : (left + right) / 2;
+        if (n.notes) {
+          const L = this.chordLayout(st, n.notes);
+          this.drawChord(x, st, L, C.ink);
+          if (labels) {
+            const edge = L.up ? L.steps[0] : L.steps[L.steps.length - 1];
+            const ly = this.y(st, edge.step) + (L.up ? S * 1.7 : -S * 1.7);
+            const text = n.notes.map((h) => Dots.Music.letter(h.idx, this.naming)).join(' ');
+            this.pill(text, x, ly, C.accent, '#1b1407', S * 0.95);
+          }
+          return;
+        }
         const y = this.drawNote(x, st, n.step, C.ink, 1, n.ottava);
         if (labels) {
           const ly = this.stemUp(st, n.step) ? y + this.labelOffset(n) : y - this.labelOffset(n);
@@ -337,7 +388,7 @@ window.Dots = window.Dots || {};
         ctx.textBaseline = 'middle';
         if (f.note) {
           const st = this.staffFor(f.note);
-          const ny = this.y(st, f.note.step);
+          const ny = this.y(st, heads(f.note)[heads(f.note).length - 1].step);
           const y = Math.min(ny - S * 1.8, st.top - S * 1.2) - f.age * S * 1.6;
           ctx.font = `800 ${S * 1.1}px ${UI_FONT}`;
           ctx.fillText(f.text, this.noteX(f.note), y);
@@ -384,7 +435,8 @@ window.Dots = window.Dots || {};
       return { steps, up, side, shifted, sharps, pushLeft, pushRight, left, right };
     }
 
-    drawChord(x, st, L, color, scale = 1) {
+    // headColor(n): a colour for that note head instead of color, or false
+    drawChord(x, st, L, color, scale = 1, headColor = null) {
       const { ctx, S } = this;
       const lo = L.steps[0].step;
       const hi = L.steps[L.steps.length - 1].step;
@@ -396,8 +448,8 @@ window.Dots = window.Dots || {};
       for (let s = b - 2; s >= lo; s -= 2) this.line(lx1, this.y(st, s), lx2, this.y(st, s));
       for (let s = b + 10; s <= hi; s += 2) this.line(lx1, this.y(st, s), lx2, this.y(st, s));
 
-      ctx.fillStyle = color;
       for (const n of L.steps) {
+        ctx.fillStyle = (headColor && headColor(n)) || color;
         ctx.beginPath();
         ctx.ellipse(x + (L.shifted.has(n) ? L.side : 0), this.y(st, n.step), S * 0.64 * scale, S * 0.46 * scale, -0.35, 0, Math.PI * 2);
         ctx.fill();
@@ -499,19 +551,7 @@ window.Dots = window.Dots || {};
         const x = it.x;
         const newest = it.slot === 0;
         ctx.globalAlpha = Math.max(0, Math.min(1, (x - left + S * 2) / (S * 4)));
-        if (newest) {
-          ctx.fillStyle = C.glow;
-          for (const { st, L } of lay.parts) {
-            const yTop = this.y(st, L.steps[L.steps.length - 1].step) - S * 1.1;
-            const yBot = this.y(st, L.steps[0].step) + S * 1.1;
-            const x1 = x - S * 1.2 - L.pushLeft;
-            const x2 = x + S * 1.2 + L.pushRight;
-            ctx.beginPath();
-            if (ctx.roundRect) ctx.roundRect(x1, yTop, x2 - x1, yBot - yTop, S * 1.1);
-            else ctx.rect(x1, yTop, x2 - x1, yBot - yTop);
-            ctx.fill();
-          }
-        }
+        if (newest) for (const { st, L } of lay.parts) this.chordGlow(x, st, L);
         const scale = newest ? 1 + Math.max(0, 0.3 - it.age) : 1;
         for (const { st, L } of lay.parts) this.drawChord(x, st, L, C.ink, scale);
 

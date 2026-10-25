@@ -62,6 +62,7 @@ Dots.I18n.add('en', {
   'rules.classic': 'Get {goal} right. You have {lives, plural, one {# life} other {# lives}} — a wrong answer or a missed note costs one.',
   'rules.sprint': 'Get {goal} right within {time} seconds. Each mistake costs {penalty} s.',
   'rules.survival': 'Get {goal} right with {lives, plural, one {# life} other {# lives}}. The notes keep speeding up.',
+  'rules.interval': 'Play both notes, in any order.',
 
   'practice.title': 'Practice · {inst}',
   'practice.desc': 'Play any note or chord and see where it is written. No score, no clock.',
