@@ -771,12 +771,6 @@
 
   function renderMidi() {
     const [status, names] = midiState;
-    const chip = $('#midiChip');
-    chip.classList.toggle('on', status === 'connected');
-    chip.textContent =
-      status === 'connected'
-        ? `MIDI · ${names[0]}${names.length > 1 ? ` +${names.length - 1}` : ''}`
-        : t(status === 'unsupported' ? 'midi.chipNone' : 'midi.chipOff');
     $('#midiStatus').textContent = status === 'connected' ? t('midi.connected', { names: names.join(', ') }) : t('midi.status.' + status);
     $('#midiConnect').hidden = status === 'connected' || status === 'unsupported';
   }
@@ -879,7 +873,6 @@
 
   $('#settingsBtn').addEventListener('click', openSettings);
   $('#midiConnect').addEventListener('click', connectMidi);
-  $('#midiChip').addEventListener('click', () => (Midi.status === 'off' || Midi.status === 'denied' ? connectMidi() : openSettings()));
   $('#micChip').addEventListener('click', () => {
     S().mic = !S().mic;
     Store.save(data);

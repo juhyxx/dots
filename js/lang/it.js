@@ -151,8 +151,6 @@ Dots.I18n.add(
     'met.calFailSub': '{n, plural, one {Contato solo # colpo} other {Contati solo # colpi}}. Batti su ogni clic e riprova.',
     'met.calAgain': 'Ancora',
 
-    'midi.chipOff': 'MIDI spento',
-    'midi.chipNone': 'Niente MIDI',
     'midi.connected': 'Connesso: {names}',
     'midi.status.off': 'Non connesso',
     'midi.status.unsupported': 'Questo browser non supporta Web MIDI: prova Chrome o Edge.',

@@ -151,8 +151,6 @@ Dots.I18n.add(
     'met.calFailSub': 'Só {n, plural, one {# toque foi contado} other {# toques foram contados}}. Bata em cada clique e tente de novo.',
     'met.calAgain': 'De novo',
 
-    'midi.chipOff': 'MIDI desligado',
-    'midi.chipNone': 'Sem MIDI',
     'midi.connected': 'Conectado: {names}',
     'midi.status.off': 'Não conectado',
     'midi.status.unsupported': 'Este navegador não suporta Web MIDI: tente o Chrome ou o Edge.',

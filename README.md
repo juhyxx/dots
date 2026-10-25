@@ -20,7 +20,7 @@ No server and no build step. Open `index.html` in a browser, or serve the folder
 
 Every instrument also accepts:
 - **Computer keyboard:** letters `C D E F G A` plus `B` or `H`, depending on the note-name setting. With solfège names, `1`–`7` stand for Do–Si (letters still work). Typed keys never check the octave.
-- **MIDI keyboard:** uses Web MIDI (Chrome or Edge). Connect it from the MIDI chip or in Settings. For guitar and bass, MIDI input is read as sounding pitch. On the start and results screens, any MIDI key works like Enter, and it doesn't make a sound there.
+- **MIDI keyboard:** uses Web MIDI (Chrome or Edge). Connect it in Settings. For guitar and bass, MIDI input is read as sounding pitch. On the start and results screens, any MIDI key works like Enter, and it doesn't make a sound there.
 - **Audio input (guitar only):** play the notes on a real guitar into a microphone or an audio interface. Turn it on with the Audio in chip on the guitar screens or in Settings; the chip's four bars light up as the input gets louder, so you can see that sound is coming in. It listens only during guitar levels and practice, and lets go of the input everywhere else. It hears one note at a time (not chords), reads it as sounding pitch like MIDI, and works like Enter on the start and results screens. Pitch comes from the YIN algorithm. A note counts once it has held steady for about 60 ms, and the same note counts again only after a new pluck or a silence. While the game's own sounds play (the wrong-answer buzz, the countdown), the audio input ignores what it hears, so speakers don't trigger answers. A very soft note in a noisy room can go unheard, and talking near the mic can register as notes.
 
 ## Practice

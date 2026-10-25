@@ -151,8 +151,6 @@ Dots.I18n.add(
     'met.calFailSub': 'Napočítali jsme jen {n} ťuknutí. Ťukej na každé klepnutí a zkus to znovu.',
     'met.calAgain': 'Znovu',
 
-    'midi.chipOff': 'MIDI vyp.',
-    'midi.chipNone': 'Bez MIDI',
     'midi.connected': 'Připojeno: {names}',
     'midi.status.off': 'Nepřipojeno',
     'midi.status.unsupported': 'Tenhle prohlížeč Web MIDI nepodporuje — zkus Chrome nebo Edge.',

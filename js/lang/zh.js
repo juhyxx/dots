@@ -151,8 +151,6 @@ Dots.I18n.add(
     'met.calFailSub': '只记录到 {n} 次敲击。请跟着每一下咔哒声敲击，再试一次。',
     'met.calAgain': '再来一次',
 
-    'midi.chipOff': 'MIDI 未开',
-    'midi.chipNone': '无 MIDI',
     'midi.connected': '已连接：{names}',
     'midi.status.off': '未连接',
     'midi.status.unsupported': '此浏览器不支持 Web MIDI，请试试 Chrome 或 Edge。',
