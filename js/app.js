@@ -276,7 +276,7 @@
   function startLevel(i) {
     levelIdx = i;
     const l = level();
-    enterGame(I().rhythm ? new Metronome(l, { latency: S().latency, hooks }) : new Game(l, { check, hooks }), i + 1);
+    enterGame(I().rhythm ? new Metronome(l, { latency: S().latency, hooks }) : new Game(l, { check, name: (n) => Music.letter(n.idx, naming()), hooks }), i + 1);
     renderIntro();
   }
 

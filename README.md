@@ -39,7 +39,7 @@ Guitar and bass have 10 levels each and start with the open strings. Piano has 3
 - **Sprint:** get N right within 60 s; each mistake costs 3 s.
 - **Survival:** like Classic, but the speed keeps rising.
 
-You earn stars for accuracy (95 % or better = ★★★, 80 % or better = ★★). If you miss a note, it lights up on the instrument. Notes you get wrong come back more often, and the level screen lists your "trouble notes".
+You earn stars for accuracy (95 % or better = ★★★, 80 % or better = ★★). When you get a note right, its name pops up with the points. If you miss a note, it lights up on the instrument. Notes you get wrong come back more often, and the level screen lists your "trouble notes".
 
 Every screen has its own address: `#/piano` is the level list, `#/piano/3` is level 3 and `#/piano/practice` is practice (`#/metronome/calibrate` for the metronome). So the browser's Back button works and you can bookmark a level. The address of a locked level opens the level list instead.
 

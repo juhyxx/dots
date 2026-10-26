@@ -3,9 +3,10 @@
 window.Dots = window.Dots || {};
 
 Dots.Game = class Game {
-  constructor(level, { check, hooks }) {
+  constructor(level, { check, name, hooks }) {
     this.level = level;
     this.check = check;
+    this.name = name;
     this.hooks = hooks || {};
     this.state = 'intro'; // intro | countdown | playing | paused | over
     this.notes = [];
@@ -177,8 +178,9 @@ Dots.Game = class Game {
       const pts = Math.round(((50 + 100 * (1 - n.p)) * mult) / (octave ? 2 : 1));
       this.score += pts;
       this.reactions.push(this.clock - n.born);
-      if (octave) this.fx.push({ note: n, text: Dots.I18n.t('fx.octave'), color: 'accent', age: 0, life: 1.3 });
-      else this.fx.push({ note: n, text: '+' + pts, color: 'good', age: 0, life: 0.9 });
+      const names = this.parts(n).map(this.name).join(' ');
+      if (octave) this.fx.push({ note: n, text: names + ' · ' + Dots.I18n.t('fx.octave'), color: 'accent', age: 0, life: 1.3 });
+      else this.fx.push({ note: n, text: names + ' +' + pts, color: 'good', age: 0, life: 0.9 });
       if (!octave && this.combo % 10 === 0) this.fx.push({ text: Dots.I18n.t('fx.streak', { n: this.combo }), color: 'accent', age: 0, life: 1.4 });
       this.speed = Math.min(this.level.maxSpeed, this.speed + this.level.ramp);
       if (this.correct >= this.level.goal) this.end(true, 'goal');
