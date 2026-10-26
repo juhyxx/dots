@@ -1,4 +1,4 @@
-// Settings, level progress and per-note stats, kept in localStorage.
+// Settings, level progress, per-note stats and the practice record, kept in localStorage.
 window.Dots = window.Dots || {};
 
 Dots.Store = (() => {
@@ -23,6 +23,7 @@ Dots.Store = (() => {
       },
       progress: per(),
       stats: per(),
+      log: {}, // practice record, one entry per day: { 'YYYY-MM-DD': { time, notes, mistakes, taps } }
     };
   }
 
@@ -32,6 +33,7 @@ Dots.Store = (() => {
       const raw = JSON.parse(localStorage.getItem(KEY) || 'null');
       if (raw) {
         Object.assign(d.settings, raw.settings);
+        Object.assign(d.log, raw.log);
         for (const k of INSTRUMENTS) {
           Object.assign(d.progress[k], raw.progress && raw.progress[k]);
           Object.assign(d.stats[k], raw.stats && raw.stats[k]);

@@ -28,6 +28,17 @@ Dots.I18n.add(
     'how.level': '3 · 升级',
     'how.levelText': '通过一关就能解锁下一关。每一关都更快一点。',
 
+    'log.today': '今天你练习了 {time}，弹了 {notes}，错了 {mistakes}。',
+    'log.todayClean': '今天你练习了 {time}，弹了 {notes}，一个都没错。',
+    'log.todayTime': '今天你练习了 {time}。',
+    'log.taps': '跟着节拍器敲了 {taps}。',
+    'log.none': '今天还没有练习。',
+    'log.total': '你一共练习了 {days}，共 {time}，弹了 {notes}。',
+    'log.notes': '{n, plural, other {# 个音}}',
+    'log.mistakes': '{n, plural, other {# 个}}',
+    'log.beats': '{n, plural, other {# 拍}}',
+    'log.days': '{n, plural, other {# 天}}',
+
     'levels.back': '← 乐器',
     'levels.best': '最高 {n}',
     'levels.trouble': '你的易错音',
@@ -193,7 +204,7 @@ Dots.I18n.add(
     'set.unlock': '解锁所有关卡',
     'set.unlockHint': '方便老师使用，或专门练习某一关。',
     'set.reset': '重置进度',
-    'set.resetConfirm': '要重置所有星星、最高分和音符统计吗？',
+    'set.resetConfirm': '要重置所有星星、最高分、音符统计和练习记录吗？',
     'set.done': '完成',
 
     'music.solfege': 'Do Re Mi Fa Sol La Si',

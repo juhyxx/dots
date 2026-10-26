@@ -28,6 +28,17 @@ Dots.I18n.add(
     'how.level': '3 · Aufsteigen',
     'how.levelText': 'Schaffe ein Level, um das nächste freizuschalten. Jedes ist ein bisschen schneller.',
 
+    'log.today': 'Heute hast du {time} geübt und {notes} mit {mistakes} gespielt.',
+    'log.todayClean': 'Heute hast du {time} geübt und {notes} ohne Fehler gespielt.',
+    'log.todayTime': 'Heute hast du {time} geübt.',
+    'log.taps': 'Mit dem Metronom hast du {taps} getippt.',
+    'log.none': 'Heute hast du noch nicht geübt.',
+    'log.total': 'Insgesamt hast du an {days} {time} geübt und {notes} gespielt.',
+    'log.notes': '{n, plural, one {# Note} other {# Noten}}',
+    'log.mistakes': '{n, plural, one {# Fehler} other {# Fehlern}}',
+    'log.beats': '{n, plural, one {# Schlag} other {# Schläge}}',
+    'log.days': '{n, plural, one {# Tag} other {# Tagen}}',
+
     'levels.back': '← Instrumente',
     'levels.best': 'Rekord {n}',
     'levels.trouble': 'Deine Problemnoten',
@@ -193,7 +204,7 @@ Dots.I18n.add(
     'set.unlock': 'Alle Level freischalten',
     'set.unlockHint': 'Praktisch für Lehrkräfte oder zum Üben eines bestimmten Levels.',
     'set.reset': 'Fortschritt zurücksetzen',
-    'set.resetConfirm': 'Alle Sterne, Rekorde und Notenstatistiken zurücksetzen?',
+    'set.resetConfirm': 'Alle Sterne, Rekorde, Notenstatistiken und dein Übungsprotokoll zurücksetzen?',
     'set.done': 'Fertig',
 
     'music.solfege': 'Do Re Mi Fa Sol La Si',

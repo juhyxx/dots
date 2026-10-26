@@ -28,6 +28,17 @@ Dots.I18n.add(
     'how.level': '3 · Postupuj dál',
     'how.levelText': 'Splň úroveň a odemkneš další. Každá je o kousek rychlejší.',
 
+    'log.today': 'Dnes máš za sebou {time} cvičení a {notes} s {mistakes}.',
+    'log.todayClean': 'Dnes máš za sebou {time} cvičení a {notes} bez jediné chyby.',
+    'log.todayTime': 'Dnes máš za sebou {time} cvičení.',
+    'log.taps': 'S metronomem k tomu {taps}.',
+    'log.none': 'Dnes zatím bez cvičení.',
+    'log.total': 'Celkem máš za sebou {time} cvičení během {days} a {notes}.',
+    'log.notes': '{n, plural, one {# zahranou notu} few {# zahrané noty} other {# zahraných not}}',
+    'log.mistakes': '{n, plural, one {# chybou} other {# chybami}}',
+    'log.beats': '{n, plural, other {# ťuknutí}}',
+    'log.days': '{n, plural, one {# dne} other {# dní}}',
+
     'levels.back': '← Nástroje',
     'levels.best': 'Rekord {n}',
     'levels.trouble': 'Noty, se kterými bojuješ',
@@ -193,7 +204,7 @@ Dots.I18n.add(
     'set.unlock': 'Odemknout všechny úrovně',
     'set.unlockHint': 'Hodí se pro učitele nebo na procvičování konkrétní úrovně.',
     'set.reset': 'Smazat postup',
-    'set.resetConfirm': 'Smazat všechny hvězdy, rekordy a statistiky not?',
+    'set.resetConfirm': 'Smazat všechny hvězdy, rekordy, statistiky not a záznam cvičení?',
     'set.done': 'Hotovo',
 
     'music.solfege': 'Do Re Mi Fa Sol La Si',

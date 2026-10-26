@@ -226,6 +226,12 @@ main {
 
 .lead { color: var(--muted); font-size: 18px; max-width: 580px; margin: 0; line-height: 1.5; }
 
+/* practice record: what you did today, and all the days so far */
+.record { align-self: flex-start; max-width: 640px; margin-top: 18px; padding: 12px 16px; border-radius: 14px; background: var(--bg2); line-height: 1.45; }
+.record p { margin: 0; }
+.record b { color: var(--accent-ink); font-weight: 800; white-space: nowrap; }
+#recordTotal { margin-top: 2px; color: var(--muted); font-size: 14px; }
+
 .instrument-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));

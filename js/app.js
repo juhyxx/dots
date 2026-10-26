@@ -43,6 +43,7 @@
 
   function show(name) {
     if (game && game.rhythm) game.pause(); // silences clicks already handed to the audio clock
+    if (screen === 'game') Store.save(data); // the practice record of free play, or of a level left halfway
     screen = name;
     document.querySelectorAll('.screen').forEach((s) => s.classList.toggle('active', s.id === 'screen-' + name));
     document.body.classList.toggle('in-game', name === 'game');
@@ -66,10 +67,48 @@
       const k = c.dataset.instrument;
       c.querySelector('.inst-stars').textContent = `★ ${starsFor(k)} / ${Levels[k].length * 3}`;
     });
+    renderRecord();
     $('#howAnswer').innerHTML =
       naming() === 'S'
         ? t('how.answerTextSolfege', { keys: `1 = ${Music.letter(0, 'S')} … 7 = ${Music.letter(6, 'S')}` })
         : t('how.answerText', { keys: `<span class="letters">${letters()}</span>` });
+  }
+
+  // 40 s · 5 min · 1 h 20 min, in the language's own short units
+  function duration(sec) {
+    const unit = (n, u) => n.toLocaleString(I18n.lang, { style: 'unit', unit: u, unitDisplay: 'short' });
+    if (sec < 60) return unit(Math.max(1, Math.floor(sec)), 'second');
+    const min = Math.round(sec / 60);
+    if (min < 60) return unit(min, 'minute');
+    return [unit(Math.floor(min / 60), 'hour'), min % 60 && unit(min % 60, 'minute')].filter(Boolean).join(' ');
+  }
+
+  // "Today you practised 5 min and played 150 notes with 3 mistakes.", and below it all the days so far
+  function renderRecord() {
+    const days = Object.values(data.log);
+    $('#record').hidden = !days.length;
+    if (!days.length) return;
+    const b = (s) => `<b>${s}</b>`;
+    const sum = (k) => days.reduce((a, d) => a + d[k], 0);
+    const d = data.log[dayKey()];
+    let today = t('log.none');
+    if (d) {
+      const vars = { time: b(duration(d.time)), notes: b(t('log.notes', { n: d.notes })), mistakes: b(t('log.mistakes', { n: d.mistakes })) };
+      today = sentences(
+        t(!d.notes ? 'log.todayTime' : d.mistakes ? 'log.today' : 'log.todayClean', vars),
+        d.taps > 0 && t('log.taps', { taps: b(t('log.beats', { n: d.taps })) })
+      );
+    }
+    $('#recordToday').innerHTML = today;
+    const before = days.length > (d ? 1 : 0);
+    $('#recordTotal').hidden = !before;
+    if (before) {
+      $('#recordTotal').innerHTML = t('log.total', {
+        time: b(duration(sum('time'))),
+        days: b(t('log.days', { n: days.length })),
+        notes: b(t('log.notes', { n: sum('notes') })),
+      });
+    }
   }
 
   // a level you've passed stays open, also when a new level is added before it
@@ -326,6 +365,8 @@
 
   function practiceNote(midi) {
     game.add(writtenNote(midi));
+    playedAt = performance.now();
+    logAdd('notes');
   }
 
   function renderIntro() {
@@ -426,6 +467,7 @@
     if (!game || !game.rhythm) return;
     if (game.state === 'intro') return begin();
     const grade = game.tap(ms);
+    if (grade) logAdd('taps');
     const pad = $('.tap-pad');
     if (!grade || !pad) return;
     clearTimeout(padTimer);
@@ -445,6 +487,22 @@
     }
   }
 
+  // The practice record keeps, per local day, the seconds played, the notes played (right or wrong),
+  // the mistakes (wrong or missed notes) and the metronome taps. Time runs while a level is being played,
+  // and in free play for as long as notes keep coming.
+  const IDLE = 10000; // ms after a free-play note that still count as practising
+  let playedAt = -Infinity; // performance.now() of the last free-play note
+  let logged = false; // something was played in this tab since it was last hidden
+
+  const dayKey = (d = new Date()) => [d.getFullYear(), d.getMonth() + 1, d.getDate()].map((x) => String(x).padStart(2, '0')).join('-');
+
+  function logAdd(k, n = 1) {
+    const day = dayKey();
+    const r = data.log[day] || (data.log[day] = { time: 0, notes: 0, mistakes: 0, taps: 0 });
+    r[k] += n;
+    logged = true;
+  }
+
   const hooks = {
     onTick(final) {
       Audio.tick(final);
@@ -452,6 +510,8 @@
     // notes: the one just played (hit, octave), or those not played yet (wrong, miss)
     onResult(kind, notes) {
       for (const n of notes) recordStat(n, kind === 'hit' || kind === 'octave');
+      if (kind !== 'miss') logAdd('notes');
+      if (kind === 'wrong' || kind === 'miss') logAdd('mistakes');
       if (kind === 'octave' || kind === 'miss') for (const n of notes) inputUI.hint(n.midi);
       if (kind === 'miss') Audio.buzz(true);
     },
@@ -520,6 +580,7 @@
     last = now;
     if (game) {
       game.update(dt);
+      if (game.practice ? now - playedAt < IDLE : game.state === 'playing') logAdd('time', dt);
       view().draw(game);
       hud();
     }
@@ -888,6 +949,7 @@
     const fresh = Store.defaults();
     data.progress = fresh.progress;
     data.stats = fresh.stats;
+    data.log = fresh.log;
     Store.save(data);
     applySettings();
   });
@@ -952,7 +1014,14 @@
   }).observe($('#stage'));
   // the sheet sets its own height, so it's redrawn on the next frame, outside the observer's callback
   new ResizeObserver(() => requestAnimationFrame(() => sheet.drawSheet())).observe($('#troubleSheet'));
-  document.addEventListener('visibilitychange', () => document.hidden && pause());
+  // Hiding is also the last sure moment before the tab is closed, so the practice record is kept then;
+  // only by a tab that was played in, so one forgotten in the background can't overwrite newer progress.
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) return;
+    pause();
+    if (logged) Store.save(data);
+    logged = false;
+  });
   if (document.fonts) {
     document.fonts
       .load('40px Bravura', '\uE050\uE062')

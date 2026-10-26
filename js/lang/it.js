@@ -28,6 +28,17 @@ Dots.I18n.add(
     'how.level': '3 · Sali di livello',
     'how.levelText': 'Supera un livello per sbloccare il successivo. Ognuno è un po’ più veloce.',
 
+    'log.today': 'Oggi hai fatto {time} di esercizio e suonato {notes} con {mistakes}.',
+    'log.todayClean': 'Oggi hai fatto {time} di esercizio e suonato {notes} senza errori.',
+    'log.todayTime': 'Oggi hai fatto {time} di esercizio.',
+    'log.taps': 'Con il metronomo hai battuto {taps}.',
+    'log.none': 'Oggi non hai ancora fatto esercizio.',
+    'log.total': 'In tutto hai fatto {time} di esercizio in {days} e suonato {notes}.',
+    'log.notes': '{n, plural, one {# nota} other {# note}}',
+    'log.mistakes': '{n, plural, one {# errore} other {# errori}}',
+    'log.beats': '{n, plural, one {# colpo} other {# colpi}}',
+    'log.days': '{n, plural, one {# giorno} other {# giorni}}',
+
     'levels.back': '← Strumenti',
     'levels.best': 'Record {n}',
     'levels.trouble': 'Le tue note difficili',
@@ -193,7 +204,7 @@ Dots.I18n.add(
     'set.unlock': 'Sblocca tutti i livelli',
     'set.unlockHint': 'Utile per gli insegnanti o per esercitarsi su un livello preciso.',
     'set.reset': 'Azzera i progressi',
-    'set.resetConfirm': 'Azzerare tutte le stelle, i record e le statistiche delle note?',
+    'set.resetConfirm': 'Azzerare tutte le stelle, i record, le statistiche delle note e il registro degli esercizi?',
     'set.done': 'Fatto',
 
     'music.solfege': 'Do Re Mi Fa Sol La Si',

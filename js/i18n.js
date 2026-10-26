@@ -49,14 +49,14 @@ Dots.I18n = (() => {
   }
 
   // {name} inserts vars.name. {n, plural, one {# note} other {# notes}} picks the form for vars.n
-  // (# = the number, =0 matches exactly); plural branches can't hold other {placeholders}.
+  // (# = the number, written the language's way, e.g. 4,210; =0 matches exactly); plural branches can't hold other {placeholders}.
   function format(s, vars = {}) {
     return s
       .replace(/\{(\w+), plural,((?:\s*=?\w+\s*\{[^{}]*\})+)\s*\}/g, (m, k, forms) => {
         const n = vars[k];
         const map = {};
         forms.replace(/(=?\w+)\s*\{([^{}]*)\}/g, (_, cat, text) => (map[cat] = text));
-        return (map['=' + n] ?? map[plurals.select(n)] ?? map.other ?? '').replace(/#/g, n);
+        return (map['=' + n] ?? map[plurals.select(n)] ?? map.other ?? '').replace(/#/g, Number(n).toLocaleString(lang));
       })
       .replace(/\{(\w+)\}/g, (m, k) => (k in vars ? vars[k] : m));
   }

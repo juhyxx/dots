@@ -29,6 +29,17 @@ Dots.I18n.add('en', {
   'how.level': '3 · Level up',
   'how.levelText': 'Pass a level to unlock the next. Every level is a little faster.',
 
+  'log.today': 'Today you practised {time} and played {notes} with {mistakes}.',
+  'log.todayClean': 'Today you practised {time} and played {notes} without a mistake.',
+  'log.todayTime': 'Today you practised {time}.',
+  'log.taps': 'You tapped {taps} along with the metronome.',
+  'log.none': "You haven't practised yet today.",
+  'log.total': "Altogether you've practised {time} on {days} and played {notes}.",
+  'log.notes': '{n, plural, one {# note} other {# notes}}',
+  'log.mistakes': '{n, plural, one {# mistake} other {# mistakes}}',
+  'log.beats': '{n, plural, one {# beat} other {# beats}}',
+  'log.days': '{n, plural, one {# day} other {# days}}',
+
   'levels.back': '← Instruments',
   'levels.best': 'Best {n}',
   'levels.trouble': 'Your trouble notes',
@@ -194,7 +205,7 @@ Dots.I18n.add('en', {
   'set.unlock': 'Unlock all levels',
   'set.unlockHint': 'Handy for teachers or practising a specific level.',
   'set.reset': 'Reset progress',
-  'set.resetConfirm': 'Reset all stars, best scores and note stats?',
+  'set.resetConfirm': 'Reset all stars, best scores, note stats and your practice record?',
   'set.done': 'Done',
 
   // fixed-do names, space-separated; interval names (0 = octave … 11 = major 7th), |-separated
